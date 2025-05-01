@@ -1190,6 +1190,3 @@ def resign_game(game_id):
         'winner': winner
     }), 200
 # Run the server
-if __name__ == '__main__':
-    # Use socketio.run for development
-    socketio.run(app, debug=True)
