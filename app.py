@@ -16,8 +16,8 @@ import certifi
 app = Flask(__name__)
 
 # Configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-key')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'generate-a-secure-random-key')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'another-secure-random-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
 
 # Initialize extensions - using threading mode for Python 3.12 compatibility
