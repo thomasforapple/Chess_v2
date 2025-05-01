@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="400" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Chess Board -->
+  <g transform="translate(70, 50)">
+    <!-- Board squares -->
+    <g>
+      <!-- Row 1 -->
+      <rect x="0" y="0" width="45" height="45" fill="#E8C08C"/>
+      <rect x="45" y="0" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="90" y="0" width="45" height="45" fill="#E8C08C"/>
+      <rect x="135" y="0" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="180" y="0" width="45" height="45" fill="#E8C08C"/>
+      <rect x="225" y="0" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="270" y="0" width="45" height="45" fill="#E8C08C"/>
+      <rect x="315" y="0" width="45" height="45" fill="#4A4A4A"/>
+      
+      <!-- Row 2 -->
+      <rect x="0" y="45" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="45" y="45" width="45" height="45" fill="#E8C08C"/>
+      <rect x="90" y="45" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="135" y="45" width="45" height="45" fill="#E8C08C"/>
+      <rect x="180" y="45" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="225" y="45" width="45" height="45" fill="#E8C08C"/>
+      <rect x="270" y="45" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="315" y="45" width="45" height="45" fill="#E8C08C"/>
+      
+      <!-- Row 3 -->
+      <rect x="0" y="90" width="45" height="45" fill="#E8C08C"/>
+      <rect x="45" y="90" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="90" y="90" width="45" height="45" fill="#E8C08C"/>
+      <rect x="135" y="90" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="180" y="90" width="45" height="45" fill="#E8C08C"/>
+      <rect x="225" y="90" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="270" y="90" width="45" height="45" fill="#E8C08C"/>
+      <rect x="315" y="90" width="45" height="45" fill="#4A4A4A"/>
+      
+      <!-- Row 4 -->
+      <rect x="0" y="135" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="45" y="135" width="45" height="45" fill="#E8C08C"/>
+      <rect x="90" y="135" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="135" y="135" width="45" height="45" fill="#E8C08C"/>
+      <rect x="180" y="135" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="225" y="135" width="45" height="45" fill="#E8C08C"/>
+      <rect x="270" y="135" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="315" y="135" width="45" height="45" fill="#E8C08C"/>
+      
+      <!-- Row 5 -->
+      <rect x="0" y="180" width="45" height="45" fill="#E8C08C"/>
+      <rect x="45" y="180" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="90" y="180" width="45" height="45" fill="#E8C08C"/>
+      <rect x="135" y="180" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="180" y="180" width="45" height="45" fill="#E8C08C"/>
+      <rect x="225" y="180" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="270" y="180" width="45" height="45" fill="#E8C08C"/>
+      <rect x="315" y="180" width="45" height="45" fill="#4A4A4A"/>
+      
+      <!-- Row 6 -->
+      <rect x="0" y="225" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="45" y="225" width="45" height="45" fill="#E8C08C"/>
+      <rect x="90" y="225" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="135" y="225" width="45" height="45" fill="#E8C08C"/>
+      <rect x="180" y="225" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="225" y="225" width="45" height="45" fill="#E8C08C"/>
+      <rect x="270" y="225" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="315" y="225" width="45" height="45" fill="#E8C08C"/>
+      
+      <!-- Row 7 -->
+      <rect x="0" y="270" width="45" height="45" fill="#E8C08C"/>
+      <rect x="45" y="270" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="90" y="270" width="45" height="45" fill="#E8C08C"/>
+      <rect x="135" y="270" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="180" y="270" width="45" height="45" fill="#E8C08C"/>
+      <rect x="225" y="270" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="270" y="270" width="45" height="45" fill="#E8C08C"/>
+      <rect x="315" y="270" width="45" height="45" fill="#4A4A4A"/>
+      
+      <!-- Row 8 -->
+      <rect x="0" y="315" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="45" y="315" width="45" height="45" fill="#E8C08C"/>
+      <rect x="90" y="315" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="135" y="315" width="45" height="45" fill="#E8C08C"/>
+      <rect x="180" y="315" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="225" y="315" width="45" height="45" fill="#E8C08C"/>
+      <rect x="270" y="315" width="45" height="45" fill="#4A4A4A"/>
+      <rect x="315" y="315" width="45" height="45" fill="#E8C08C"/>
+    </g>
+    
+    <!-- Board border -->
+    <rect x="-5" y="-5" width="370" height="370" stroke="#505050" stroke-width="5" fill="none"/>
+    
+    <!-- Chess pieces: white -->
+    <!-- Pawns -->
+
+  </g>
+  
+  <!-- Decorative elements -->
+  
+  
+  <!-- Decorative elements around the board -->
+  <circle cx="50" cy="200" r="20" fill="#4A4A4A" opacity="0.5"/>
+  <circle cx="450" cy="150" r="15" fill="#E8C08C" opacity="0.6"/>
+  <circle cx="30" cy="330" r="12" fill="#E8C08C" opacity="0.4"/>
+  
+  <!-- Glow effect behind the board -->
+  <circle cx="225" cy="200" r="200" fill="url(#glow)" opacity="0.15"/>
+  
+  <!-- Definitions -->
+  <defs>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+      <stop offset="0%" stop-color="#E8C08C" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#333333" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

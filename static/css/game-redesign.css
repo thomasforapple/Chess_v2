@@ -1,0 +1,470 @@
+/* Game Page Redesign CSS */
+
+/* New grid layout for game container */
+.game-container {
+  display: grid;
+  grid-template-areas:
+    "header header header"
+    "controls board history"
+    "chat chat chat";
+  grid-template-columns: 250px 1fr 250px;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-md);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  height: calc(100vh - 70px);
+}
+
+/* Game header with game status */
+.game-header {
+  grid-area: header;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* Left sidebar with game controls */
+.game-controls {
+  grid-area: controls;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Main board area */
+.main-board-area {
+  grid-area: board;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* Right sidebar with move history */
+.game-history {
+  grid-area: history;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bottom chat area */
+.game-chat {
+  grid-area: chat;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  margin-top: var(--space-md);
+}
+
+/* Move history container */
+.move-history-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: var(--panel-bg);
+  border-radius: 4px;
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  max-height: calc(100vh - 400px);
+}
+
+/* Game actions (buttons) */
+.game-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.game-actions button {
+  width: 100%;
+}
+
+/* Game info panel */
+.game-info-panel {
+  background-color: var(--panel-bg);
+  border-radius: 4px;
+  padding: var(--space-md);
+  margin-top: auto;
+}
+
+/* Player box styles - positioned above and below board */
+.player-box {
+  width: 100%;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: var(--space-sm);
+  margin: 0 auto;
+  max-width: 580px;
+}
+
+.top-player {
+  order: -1; /* Always place at the top */
+}
+
+.bottom-player {
+  order: 1; /* Always place at the bottom */
+}
+
+/* Player info styles */
+/* Add this to game-redesign.css */
+.player-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.player-clock {
+    background-color: var(--panel-bg);
+    border-radius: 4px;
+    padding: var(--space-xs) var(--space-sm);
+    text-align: center;
+    min-width: 80px;
+}
+
+.clock-display {
+    font-family: monospace;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.clock-active {
+    color: var(--button-primary);
+    animation: clock-pulse 1s infinite;
+}
+
+.clock-low {
+    color: var(--button-danger);
+}
+
+@keyframes clock-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+/* Game status container */
+.game-status-container {
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--panel-bg);
+  border-radius: 4px;
+  text-align: center;
+  min-width: 200px;
+}
+
+/* Chat messages */
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  background-color: var(--panel-bg);
+  border-radius: 4px;
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  height: 100px;
+}
+
+/* Game result panel (appears above the board) */
+.game-result-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: var(--space-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: fadeIn 0.5s ease-in-out;
+    text-align: center;
+    border-left: 4px solid #777;
+}
+
+.game-result-panel.win {
+    border-left-color: #2ecc71;
+}
+
+.game-result-panel.loss {
+    border-left-color: #e74c3c;
+}
+
+.game-result-panel.draw {
+    border-left-color: #f39c12;
+}
+
+.result-header {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: var(--space-sm);
+}
+
+.result-cause {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+/* Add result color variants */
+.game-result-panel.win {
+  border-left: 4px solid #2ecc71;
+}
+
+.game-result-panel.loss {
+  border-left: 4px solid #e74c3c;
+}
+
+.game-result-panel.draw {
+  border-left: 4px solid #f39c12;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.result-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+/* Button icon styles */
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.btn-icon:hover {
+  background-color: var(--button-hover);
+}
+
+/* Check indicator text */
+.check-indicator-text {
+  color: #dc3545;
+  font-weight: bold;
+  animation: pulse 1s infinite;
+}
+
+/* The chess board itself - ensure it's properly sized */
+.board-container {
+  width: 560px;
+  height: 560px;
+  position: relative;
+  margin: 0 auto;
+  order: 0; /* Always in the middle */
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 560px;
+  height: 560px;
+  border: 5px solid var(--board-border);
+  box-sizing: content-box;
+}
+
+/* Notification styling */
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.notification.success {
+  background-color: #2ecc71;
+}
+
+.notification.error {
+  background-color: #e74c3c;
+}
+
+.notification.info {
+  background-color: #3498db;
+}
+
+.notification.warning {
+  background-color: #f39c12;
+}
+
+/* Game code and link sharing */
+.game-code-display, .game-link-container {
+  margin: var(--space-sm) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+#game-code-display-text {
+  font-family: monospace;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+/* Animations */
+@keyframes zoomIn {
+  from {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .game-container {
+    grid-template-columns: 200px 1fr 200px;
+  }
+  
+  .board-container, .board {
+    width: 480px;
+    height: 480px;
+  }
+  
+  .square {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .player-box {
+    max-width: 480px;
+  }
+}
+
+@media (max-width: 992px) {
+  .game-container {
+    grid-template-areas:
+      "header header"
+      "board board"
+      "controls history"
+      "chat chat";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  
+  .board-container, .board {
+    width: 90vw;
+    max-width: 560px;
+    height: 90vw;
+    max-height: 560px;
+    margin: 0 auto;
+  }
+  
+  .square {
+    width: calc(90vw / 8);
+    max-width: 70px;
+    height: calc(90vw / 8);
+    max-height: 70px;
+  }
+  
+  .player-box {
+    width: 90vw;
+    max-width: 560px;
+  }
+  
+  .game-result-panel {
+    width: 80%;
+  }
+}
+
+@media (max-width: 576px) {
+  .game-container {
+    grid-template-areas:
+      "header"
+      "board"
+      "controls"
+      "history"
+      "chat";
+    grid-template-columns: 1fr;
+    padding: var(--space-sm);
+    gap: var(--space-sm);
+  }
+  
+  .board-container, .board {
+    width: 96vw;
+    height: 96vw;
+  }
+  
+  .square {
+    width: calc(96vw / 8);
+    height: calc(96vw / 8);
+  }
+  
+  .player-box {
+    width: 96vw;
+  }
+  
+  .game-result-panel {
+    width: 95%;
+  }
+  
+  .result-actions {
+    flex-direction: column;
+  }
+  
+  .notification {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    width: calc(100% - 20px);
+    text-align: center;
+  }
+}

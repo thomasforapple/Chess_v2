@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jouer aux Échecs - Chess Arena</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/game-redesign.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.min.js"></script>
+</head>
+<body class="game-page">
+    <nav class="main-nav">
+        <div class="logo">
+            <i class="fas fa-chess-knight"></i>
+            <h1>ChessFront</h1>
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link">Tableau de bord</a>
+            <a href="/games" class="nav-link">Mes parties</a>
+            <a href="/profile" class="nav-link">Profil</a>
+            <a href="#" id="logout-btn" class="nav-link">Déconnexion</a>
+        </div>
+    </nav>
+
+    <div class="game-container">
+        <input type="hidden" id="game-id" value="{{ game_id }}">
+        <input type="hidden" id="user-color" value="">
+        
+        <!-- En-tête de jeu avec le statut -->
+        <div class="game-header">
+            <div class="game-status-container">
+                <div id="game-status" class="game-status">En attente du début de la partie</div>
+                <div id="check-indicator" class="check-indicator-text" style="display:none">ÉCHEC !</div>
+            </div>
+        </div>
+        
+        <!-- Barre latérale gauche - Contrôles du jeu -->
+        <div class="game-controls">
+            <div class="game-actions">
+                <button id="resign-btn" class="btn btn-danger">Abandonner</button>
+                <button id="draw-btn" class="btn btn-secondary">Proposer nulle</button>
+                <button id="flip-board" class="btn btn-light">Retourner l’échiquier</button>
+            </div>
+            
+            <div class="game-info-panel">
+                <h3>Infos de la partie</h3>
+                <div class="game-code-display" id="game-code-container" style="display:none;">
+                    <p>Code de la partie : <span id="game-code-display-text"></span> 
+                    <button id="copy-game-code" class="btn-icon"><i class="fas fa-copy"></i></button></p>
+                </div>
+                <div class="time-control" id="time-control-display">
+                    <p>
+                        <span id="time-control-icon"></span>
+                        Contrôle du temps : <span id="time-control-text">Illimité</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Zone centrale - Échiquier et joueurs -->
+        <div class="main-board-area">
+            <!-- Joueur du haut (adversaire) -->
+            <div class="player-box top-player" id="top-player-box">
+                <div class="player-info" id="opponent-info">
+                    <div class="avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="player-details">
+                        <h3 id="opponent-name">En attente d’un adversaire...</h3>
+                        <span id="opponent-rating"></span>
+                    </div>
+                    <div class="player-clock">
+                        <div class="clock-display" id="opponent-clock">--:--</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Résultat de la partie -->
+            <div id="game-result" class="game-result-panel" style="display:none;">
+                <div class="result-header">
+                    <h3 id="result-message"></h3>
+                </div>
+                <div class="result-actions">
+                    <a href="/dashboard" class="btn btn-primary">Retour au tableau de bord</a>
+                    <button id="rematch-btn" class="btn btn-light">Demander une revanche</button>
+                </div>
+            </div>
+            
+            <div class="board-container">
+                <div class="board" id="board"></div>
+                <svg class="overlay" id="arrow-overlay"></svg>
+            </div>
+            
+            <!-- Joueur du bas (utilisateur actuel) -->
+            <div class="player-box bottom-player" id="bottom-player-box">
+                <div class="player-info" id="player-info">
+                    <div class="avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="player-details">
+                        <h3 id="player-name"></h3>
+                        <span id="player-rating"></span>
+                    </div>
+                    <div class="player-clock">
+                        <div class="clock-display" id="player-clock">--:--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promotion de pion -->
+            <div class="promotion-overlay" id="promotion-overlay" style="display:none;">
+                <div class="promotion-pieces" id="promotion-pieces">
+                    <!-- Les pièces de promotion seront ajoutées ici dynamiquement -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barre latérale droite - Historique des coups -->
+        <div class="game-history">
+            <div class="move-history-container">
+                <h3>Historique des coups</h3>
+                <div id="moves-list" class="moves-list"></div>
+            </div>
+        </div>
+        
+        <!-- Chat de la partie (en bas) -->
+        <div class="game-chat" style="display:none;">
+            <h3>Chat de la partie</h3>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="chat-message" placeholder="Écrire un message...">
+                <button id="send-message" class="btn btn-primary">Envoyer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="invite-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Inviter un ami</h2>
+            <p>Partage ce code de partie avec ton ami :</p>
+            <div class="game-code">
+                <span id="game-code-display"></span>
+                <button id="copy-code" class="btn btn-light">Copier</button>
+            </div>
+            <p>Ou partage ce lien :</p>
+            <div class="game-link">
+                <input type="text" id="game-link" readonly>
+                <button id="copy-link" class="btn btn-light">Copier</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="draw-offer-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Proposition de nulle</h2>
+            <p>Ton adversaire a proposé une nulle. Acceptes-tu ?</p>
+            <div class="modal-actions">
+                <button id="accept-draw" class="btn btn-primary">Accepter</button>
+                <button id="decline-draw" class="btn btn-danger">Refuser</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

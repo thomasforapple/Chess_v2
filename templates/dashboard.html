@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Chess Arena</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/dashboard-redesign.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dashboard-page">
+    <nav class="main-nav">
+        <div class="logo">
+            <i class="fas fa-chess-knight"></i>
+            <h1>ChessFront</h1>
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link active">Tableau de bord</a>
+            <a href="/games" class="nav-link">Mes parties</a>
+            <a href="/profile" class="nav-link">Profil</a>
+            <a href="#" id="logout-btn" class="nav-link">Déconnexion</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="welcome-section">
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h2>Bienvenue, <span id="username"></span> !</h2>
+                </div>
+                <div class="join-game-action">
+                    <button id="join-game-btn" class="btn btn-light">
+                        <i class="fas fa-handshake"></i> Rejoindre une partie
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Ratings Cards -->
+            <div class="ratings-cards">
+                <div class="rating-card">
+                    <div class="rating-icon icon-blitz">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="rating-info">
+                        <h3>Blitz</h3>
+                        <span class="rating-value" id="player-elo-blitz">1200</span>
+                        <div class="games-played">Games: 0</div>
+                    </div>
+                </div>
+                <div class="rating-card">
+                    <div class="rating-icon icon-rapid">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+                    <div class="rating-info">
+                        <h3>Rapid</h3>
+                        <span class="rating-value" id="player-elo-rapid">1200</span>
+                        <div class="games-played">Games: 0</div>
+                    </div>
+                </div>
+                <div class="rating-card">
+                    <div class="rating-icon icon-classical">
+                        <i class="fas fa-chess-clock"></i>
+                    </div>
+                    <div class="rating-info">
+                        <h3>Classical</h3>
+                        <span class="rating-value" id="player-elo-classical">1200</span>
+                        <div class="games-played">Games: 0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section création de partie -->
+        <div class="create-game-section">
+            <h3>Créer une nouvelle partie</h3>
+            <div class="time-controls">
+                <div class="time-control-group">
+                    <h4><i class="fas fa-bolt"></i> Blitz</h4>
+                    <div class="time-control-buttons">
+                        <button class="btn create-game-btn" data-time="blitz_3_0">
+                            <div class="time-display">3+0</div>
+                            <div class="time-label">3 min</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="blitz_3_2">
+                            <div class="time-display">3+2</div>
+                            <div class="time-label">3 min, 2 sec d'incr.</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="blitz_5_0">
+                            <div class="time-display">5+0</div>
+                            <div class="time-label">5 min</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="blitz_5_5">
+                            <div class="time-display">5+5</div>
+                            <div class="time-label">5 min, 5 sec d'incr.</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="time-control-group">
+                    <h4><i class="fas fa-stopwatch"></i> Rapide</h4>
+                    <div class="time-control-buttons">
+                        <button class="btn create-game-btn" data-time="rapid_10_0">
+                            <div class="time-display">10+0</div>
+                            <div class="time-label">10 min</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="rapid_10_5">
+                            <div class="time-display">10+5</div>
+                            <div class="time-label">10 min, 5 sec d'incr.</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="rapid_15_10">
+                            <div class="time-display">15+10</div>
+                            <div class="time-label">15 min, 10 sec d'incr.</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="time-control-group">
+                    <h4><i class="fas fa-chess-clock"></i> Classique</h4>
+                    <div class="time-control-buttons">
+                        <button class="btn create-game-btn" data-time="classical_30_0">
+                            <div class="time-display">30+0</div>
+                            <div class="time-label">30 min</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="classical_30_20">
+                            <div class="time-display">30+20</div>
+                            <div class="time-label">30 min, 20 sec d'incr.</div>
+                        </button>
+                        <button class="btn create-game-btn" data-time="classical_60_30">
+                            <div class="time-display">60+30</div>
+                            <div class="time-label">1h, 30 sec d'incr.</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="time-control-group">
+                    <h4><i class="fas fa-infinity"></i> Autres</h4>
+                    <div class="other-controls">
+                        <button class="btn create-game-btn" data-time="unlimited">
+                            <div class="time-display"><i class="fas fa-infinity"></i></div>
+                            <div class="time-label">Illimité</div>
+                        </button>
+                        <button id="custom-game-btn" class="btn btn-primary">
+                            <i class="fas fa-cogs"></i> Paramètres personnalisés
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="games-sections">
+            <div class="active-games-section">
+                <div class="section-header">
+                    <h3>Parties en cours</h3>
+                    <span class="games-count"><span id="active-games-count">0</span> parties</span>
+                </div>
+                <div id="active-games" class="games-grid">
+                    <div class="no-games-message" id="no-active-games">
+                        <p>Vous n'avez aucune partie en cours. Lancez-en une nouvelle !</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-games-section">
+                <div class="section-header">
+                    <h3>Parties récemment terminées</h3>
+                    <span class="games-count"><span id="recent-games-count">0</span> parties</span>
+                </div>
+                <div id="recent-games" class="games-grid">
+                    <div class="no-games-message" id="no-recent-games">
+                        <p>Vous n'avez terminé aucune partie récemment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-section">
+            <h3>Statistiques globales</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="games-played">0</span>
+                    <span class="stat-label">Parties totales</span>
+                </div>
+                <div class="stat-item win-stat">
+                    <span class="stat-value" id="wins">0</span>
+                    <span class="stat-label">Victoires</span>
+                </div>
+                <div class="stat-item loss-stat">
+                    <span class="stat-value" id="losses">0</span>
+                    <span class="stat-label">Défaites</span>
+                </div>
+                <div class="stat-item draw-stat">
+                    <span class="stat-value" id="draws">0</span>
+                    <span class="stat-label">Nulles</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de création personnalisée -->
+    <div id="custom-game-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Créer une partie personnalisée</h2>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label for="time-control">Contrôle du temps</label>
+                    <select id="time-control">
+                        <option value="unlimited">Illimité</option>
+                        <option value="blitz">Blitz (5 min)</option>
+                        <option value="rapid">Rapide (10 min)</option>
+                        <option value="classical">Classique (30 min)</option>
+                    </select>
+                </div>
+
+                <div class="form-group increment-container">
+                    <label>
+                        <input type="checkbox" id="use-increment">
+                        Ajouter un incrément
+                    </label>
+                    <div id="increment-options" style="display: none; margin-top: 10px;">
+                        <label for="increment-seconds">Secondes ajoutées après chaque coup :</label>
+                        <select id="increment-seconds">
+                            <option value="1">1 seconde</option>
+                            <option value="2">2 secondes</option>
+                            <option value="3">3 secondes</option>
+                            <option value="5" selected>5 secondes</option>
+                            <option value="10">10 secondes</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Préférence de couleur</label>
+                    <div class="color-options">
+                        <label class="color-option">
+                            <input type="radio" name="color-preference" value="white" checked>
+                            <span class="color-box white-box"></span>
+                            <span>Blanc</span>
+                        </label>
+                        <label class="color-option">
+                            <input type="radio" name="color-preference" value="black">
+                            <span class="color-box black-box"></span>
+                            <span>Noir</span>
+                        </label>
+                        <label class="color-option">
+                            <input type="radio" name="color-preference" value="random">
+                            <span class="color-box random-box"></span>
+                            <span>Aléatoire</span>
+                        </label>
+                    </div>
+                </div>
+                <button id="create-game-btn" class="btn btn-primary btn-block">Créer la partie</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal rejoindre une partie -->
+    <div id="join-game-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Rejoindre une partie</h2>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label for="game-code">Entrer le code de la partie</label>
+                    <input type="text" id="game-code" placeholder="Entrez le code partagé par votre ami">
+                </div>
+                <button id="join-game-submit" class="btn btn-primary btn-block">Rejoindre la partie</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
