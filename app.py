@@ -1191,5 +1191,5 @@ def resign_game(game_id):
     }), 200
 # Run the server
 if __name__ == '__main__':
-    # Use default Flask development server with threading mode
-    app.run(debug=True, host='localhost', port=5000)
+    # Use socketio.run for development
+    socketio.run(app, debug=True)
