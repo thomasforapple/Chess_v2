@@ -1335,7 +1335,7 @@ function initClocks(gameData) {
     else {
         const timecontroltext = document.getElementById('time-control-text');
         if (timecontroltext) {
-            timecontroltext.innerHTML = formatTimeControl(gameData.time_control);
+            timecontroltext.innerHTML = formatTimeControl(gameData.time_control.type);
         }
     }
 
