@@ -757,7 +757,6 @@ const STATE = {
 };
 
 // Initialize the clocks based on game data
-// Initialize the clocks based on game data
 function initClocks(gameData) {
     console.log('Initializing clocks with data:', gameData);
 
@@ -779,8 +778,38 @@ function initClocks(gameData) {
         return;
     }
     
-    // Handle time control object
-    if (typeof gameData.time_control === 'object') {
+    // Handle string-based time controls (e.g., 'blitz', 'rapid', 'classical')
+    if (typeof gameData.time_control === 'string') {
+        const timeControlText = document.getElementById('time-control-text');
+        if (timeControlText) {
+            timeControlText.textContent = gameData.time_control;
+        }
+        
+        console.log('Game has time control:', gameData.time_control);
+        
+        // Set times based on the time control type
+        switch(gameData.time_control) {
+            case 'blitz':
+                STATE.clock.white = 5 * 60 * 1000; // 5 minutes
+                STATE.clock.black = 5 * 60 * 1000;
+                break;
+            case 'rapid':
+                STATE.clock.white = 10 * 60 * 1000; // 10 minutes
+                STATE.clock.black = 10 * 60 * 1000;
+                break;
+            case 'classical':
+                STATE.clock.white = 30 * 60 * 1000; // 30 minutes
+                STATE.clock.black = 30 * 60 * 1000;
+                break;
+            default:
+                STATE.clock.white = 10 * 60 * 1000; // Default to 10 minutes
+                STATE.clock.black = 10 * 60 * 1000;
+        }
+        
+        STATE.clock.increment = 0; // Default to no increment for string-based controls
+    } 
+    // Handle object-based time controls (with properties like initial_time_ms, increment, type)
+    else if (typeof gameData.time_control === 'object') {
         const timeControlText = document.getElementById('time-control-text');
         if (timeControlText) {
             timeControlText.textContent = gameData.time_control.type || 'Custom';
@@ -788,59 +817,65 @@ function initClocks(gameData) {
         
         console.log('Game has time control:', gameData.time_control.type);
         
-        // Set times based on initial_time_ms from time_control
-        if (gameData.time_control.initial_time_ms) {
+        // Use initial_time_ms from time_control object for both clocks
+        if (gameData.time_control.initial_time_ms !== undefined) {
             STATE.clock.white = gameData.time_control.initial_time_ms;
             STATE.clock.black = gameData.time_control.initial_time_ms;
             STATE.clock.increment = gameData.time_control.increment || 0;
         } else {
-            // Fallback based on type
+            // Fallback based on type if initial_time_ms is not provided
             switch(gameData.time_control.type) {
                 case 'blitz':
-                    STATE.clock.white = 5 * 60 * 1000; // 5 minutes
+                    STATE.clock.white = 5 * 60 * 1000;
                     STATE.clock.black = 5 * 60 * 1000;
                     break;
                 case 'rapid':
-                    STATE.clock.white = 10 * 60 * 1000; // 10 minutes
+                    STATE.clock.white = 10 * 60 * 1000;
                     STATE.clock.black = 10 * 60 * 1000;
                     break;
                 case 'classical':
-                    STATE.clock.white = 30 * 60 * 1000; // 30 minutes
+                    STATE.clock.white = 30 * 60 * 1000;
                     STATE.clock.black = 30 * 60 * 1000;
                     break;
                 default:
-                    STATE.clock.white = 10 * 60 * 1000; // Default to 10 minutes
+                    STATE.clock.white = 10 * 60 * 1000;
                     STATE.clock.black = 10 * 60 * 1000;
             }
         }
-    } else if (typeof gameData.time_control === 'string') {
-        // Handle string-based time controls as before
-        // ...code omitted for brevity
     }
     
-    // If the server provides direct time values, use those instead
-    if (gameData.white_time_ms !== undefined) {
+    // If the server provides explicit time values for each player, use those instead
+    if (gameData.white_time_ms !== undefined && gameData.white_time_ms !== null) {
         STATE.clock.white = gameData.white_time_ms;
     }
     
-    if (gameData.black_time_ms !== undefined) {
+    if (gameData.black_time_ms !== undefined && gameData.black_time_ms !== null) {
         STATE.clock.black = gameData.black_time_ms;
+    }
+    
+    if (gameData.increment_ms !== undefined) {
+        STATE.clock.increment = gameData.increment_ms;
     }
 
     // Set additional clock properties
     STATE.clock.lastMoveTime = gameData.last_move_timestamp ? new Date(gameData.last_move_timestamp).getTime() : null;
     STATE.clock.started = gameData.status === 'active';
 
-    // Update the display immediately
-    updateClockDisplay('white', STATE.clock.white);
-    updateClockDisplay('black', STATE.clock.black);
-
-    // If the game is active, start the clock interval
-    if (STATE.clock.started && STATE.clock.white !== null && STATE.clock.black !== null) {
-        startClockInterval();
+    // Force an immediate sync with server to get the most accurate times
+    if (STATE.clock.started) {
+        // First update the display with what we have (to avoid flickering)
+        updateClockDisplay('white', STATE.clock.white);
+        updateClockDisplay('black', STATE.clock.black);
+        
+        // Then immediately sync with the server
+        syncClockWithServer(true); // Pass true to indicate this is the initial sync
+    } else {
+        // Just update the display for a game that hasn't started
+        updateClockDisplay('white', STATE.clock.white);
+        updateClockDisplay('black', STATE.clock.black);
     }
 
-    console.log('Clocks initialized (v2):', STATE.clock);
+    console.log('Clocks initialized (v3):', STATE.clock);
 }
 
 // Parse the time control string into initial time and increment
