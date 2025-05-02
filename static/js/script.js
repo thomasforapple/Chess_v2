@@ -475,7 +475,7 @@ async function fetchGameData(gameId, token) {
         
         // Update time control display
         if (gameData.time_control) {
-            updateTimeControlDisplay(gameData.time_control);
+            updateTimeControlDisplay(gameData.time_control.type);
         }
         
         // Important: First load the move history to rebuild the game
@@ -1336,6 +1336,7 @@ function initClocks(gameData) {
         const timecontroltext = document.getElementById('time-control-text');
         if (timecontroltext) {
             timecontroltext.innerHTML = formatTimeControl(gameData.time_control.type);
+            console.lo
         }
     }
 
