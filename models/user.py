@@ -12,7 +12,12 @@ class User:
             'username': username,
             'email': email,
             'password': hashed_password,
-            'elo': 1200,
+            'elo': 1200,  # Keep the legacy field for backward compatibility
+            'ratings': {
+                'blitz': {'rating': 1200, 'games': 0},
+                'rapid': {'rating': 1200, 'games': 0},
+                'classical': {'rating': 1200, 'games': 0}
+            },
             'games_played': 0,
             'games_won': 0,
             'games_lost': 0,

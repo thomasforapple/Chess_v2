@@ -315,6 +315,13 @@ class Game:
         white_player = db.users.find_one({'_id': game['white_player_id']}) if game['white_player_id'] else None
         black_player = db.users.find_one({'_id': game['black_player_id']}) if game['black_player_id'] else None
 
+        # Get the time control type
+        time_control_type = 'classical'
+        if isinstance(game['time_control'], str):
+            time_control_type = game['time_control']
+        elif isinstance(game['time_control'], dict) and 'type' in game['time_control']:
+            time_control_type = game['time_control']['type']
+
         # Format response
         formatted_game = {
             'game_id': str(game['_id']),
@@ -323,29 +330,30 @@ class Game:
             'updated_at': game['updated_at'].isoformat(),
             'game_code': game['game_code'],
             'winner': game['winner'],
-            'time_control': game['time_control'],
-            'white_time_ms': game.get('white_time_ms'),
-            'black_time_ms': game.get('black_time_ms'),
-            'increment_ms': game.get('increment_ms', 0),
-            'last_move_timestamp': game.get('last_move_timestamp').isoformat() if game.get(
-                'last_move_timestamp') else None
+            'time_control': game['time_control']
         }
-
+        
         # Add player info
         if white_player:
+            # Get appropriate rating based on time control
+            white_rating = white_player.get('ratings', {}).get(time_control_type, {}).get('rating', 
+                                                                                        white_player.get('elo', 1200))
             formatted_game['white_player'] = {
                 'user_id': str(white_player['_id']),
                 'username': white_player['username'],
-                'elo': white_player.get('elo', 1200)
+                'elo': white_rating
             }
 
         if black_player:
+            # Get appropriate rating based on time control
+            black_rating = black_player.get('ratings', {}).get(time_control_type, {}).get('rating', 
+                                                                                        black_player.get('elo', 1200))
             formatted_game['black_player'] = {
                 'user_id': str(black_player['_id']),
                 'username': black_player['username'],
-                'elo': black_player.get('elo', 1200)
+                'elo': black_rating
             }
-
+            
         return formatted_game
 
     @staticmethod
@@ -474,16 +482,29 @@ class Game:
 
             # Update user stats if game completed
             if status == 'completed':
-                if winner == player_id:
-                    # Current player won
-                    User.update_stats(player_id, 'win')
-                    opponent_id = str(game['white_player_id'] if is_black else game['black_player_id'])
-                    User.update_stats(opponent_id, 'loss')
-                elif winner == 'draw':
-                    # Game was a draw
-                    User.update_stats(player_id, 'draw')
-                    opponent_id = str(game['white_player_id'] if is_black else game['black_player_id'])
-                    User.update_stats(opponent_id, 'draw')
+                # Get the time control type
+                time_control_type = 'unlimited'
+                if isinstance(game['time_control'], str):
+                    time_control_type = game['time_control']
+                elif isinstance(game['time_control'], dict) and 'type' in game['time_control']:
+                    time_control_type = game['time_control']['type']
+                
+                # Determine the winner and update stats/ratings
+                if winner == 'draw':
+                    User.update_stats(str(game['white_player_id']), 'draw')
+                    User.update_stats(str(game['black_player_id']), 'draw')
+                    # Update ELO for a draw
+                    Game.update_elo(db, game, 'draw', time_control_type)
+                elif winner == str(game['white_player_id']):
+                    User.update_stats(str(game['white_player_id']), 'win')
+                    User.update_stats(str(game['black_player_id']), 'loss')
+                    # Update ELO for white win
+                    Game.update_elo(db, game, 'white', time_control_type)
+                else:
+                    User.update_stats(str(game['black_player_id']), 'win')
+                    User.update_stats(str(game['white_player_id']), 'loss')
+                    # Update ELO for black win
+                    Game.update_elo(db, game, 'black', time_control_type)
 
             updated_game = Game.get_by_id(game_id)
             return Game.format_game_data(updated_game, player_id), None
@@ -596,20 +617,27 @@ def login():
 @app.route('/api/auth/profile', methods=['GET'])
 @jwt_required()
 def get_profile():
-    # FIX: Get user_id directly as a string
     user_id = get_jwt_identity()
     
     user = User.get_by_id(user_id)
     
     if not user:
         return jsonify({'error': 'User not found'}), 404
-        
+    
+    # Get the ratings structure or provide default values
+    ratings = user.get('ratings', {
+        'blitz': {'rating': user.get('elo', 1200), 'games': 0},
+        'rapid': {'rating': user.get('elo', 1200), 'games': 0},
+        'classical': {'rating': user.get('elo', 1200), 'games': 0}
+    })
+    
     # Return user profile without sensitive info
     return jsonify({
         'user_id': str(user['_id']),
         'username': user['username'],
         'email': user['email'],
-        'elo': user.get('elo', 1200),
+        'elo': user.get('elo', 1200),  # Legacy field
+        'ratings': ratings,
         'games': {
             'played': user.get('games_played', 0),
             'won': user.get('games_won', 0),
@@ -1189,4 +1217,4 @@ def resign_game(game_id):
         'message': 'Successfully resigned',
         'winner': winner
     }), 200
-# Run the server
+

@@ -179,32 +179,54 @@ class Game:
         return round(player_elo + k_factor * (actual_score - expected_score))
 
     @staticmethod
-    def update_elo(db, game, result, time_control_type):
+    def update_elo(db, game, result, time_control_type='classical'):
         """Update ELO for both players after the game based on time control."""
         white_player = db.users.find_one({'_id': game['white_player_id']})
         black_player = db.users.find_one({'_id': game['black_player_id']})
         if not white_player or not black_player:
             return
-
-        # Use rating keys based on time control
-        rating_key = {
-            'blitz': 'elo_blitz',
-            'rapid': 'elo_rapid',
-            'classical': 'elo_classical'
-        }.get(time_control_type, 'elo_classical')
-
-        white_rating = white_player.get(rating_key, 1200)
-        black_rating = black_player.get(rating_key, 1200)
-
+            
+        # Map the time control to a specific type
+        if isinstance(time_control_type, dict) and 'type' in time_control_type:
+            time_control_type = time_control_type['type']
+        elif not isinstance(time_control_type, str) or time_control_type not in ['blitz', 'rapid', 'classical']:
+            time_control_type = 'classical'  # Default to classical
+        
+        # Get current ratings from the new structure
+        white_rating = white_player.get('ratings', {}).get(time_control_type, {}).get('rating', 1200)
+        black_rating = black_player.get('ratings', {}).get(time_control_type, {}).get('rating', 1200)
+        
+        white_games = white_player.get('ratings', {}).get(time_control_type, {}).get('games', 0)
+        black_games = black_player.get('ratings', {}).get(time_control_type, {}).get('games', 0)
+        
+        # Calculate new ratings based on result
         if result == 'white':
             new_white_rating = Game.calculate_elo_change(white_rating, black_rating, 'win')
             new_black_rating = Game.calculate_elo_change(black_rating, white_rating, 'loss')
         elif result == 'black':
             new_white_rating = Game.calculate_elo_change(white_rating, black_rating, 'loss')
             new_black_rating = Game.calculate_elo_change(black_rating, white_rating, 'win')
-        else:
+        else:  # Draw
             new_white_rating = Game.calculate_elo_change(white_rating, black_rating, 'draw')
             new_black_rating = Game.calculate_elo_change(black_rating, white_rating, 'draw')
-
-        db.users.update_one({'_id': white_player['_id']}, {'$set': {rating_key: new_white_rating}})
-        db.users.update_one({'_id': black_player['_id']}, {'$set': {rating_key: new_black_rating}})
+        
+        # Update ratings in the database
+        db.users.update_one(
+            {'_id': white_player['_id']},
+            {'$set': {
+                'elo': new_white_rating,  # Update legacy field
+                f'ratings.{time_control_type}.rating': new_white_rating,
+                f'ratings.{time_control_type}.games': white_games + 1
+            }}
+        )
+        
+        db.users.update_one(
+            {'_id': black_player['_id']},
+            {'$set': {
+                'elo': new_black_rating,  # Update legacy field
+                f'ratings.{time_control_type}.rating': new_black_rating,
+                f'ratings.{time_control_type}.games': black_games + 1
+            }}
+        )
+        
+        return (new_white_rating, new_black_rating)

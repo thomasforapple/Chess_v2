@@ -1314,6 +1314,7 @@ function updateGameStateUI() {
 }
 
 // Function to show game result UI
+// Function to show game result UI
 function showGameResult(result) {
     const gameResult = document.getElementById('game-result');
     const resultMessage = document.getElementById('result-message');
@@ -1325,30 +1326,40 @@ function showGameResult(result) {
 
     console.log('Showing game result:', result);
 
-    // Determine the result and cause
+    // Determine the result message and class
     let message = '';
-    let cause = '';
     let resultClass = '';
+    let cause = '';
 
-    if (result.result.indexOf('win') !== -1) {
-        message = 'You won';
-        cause = result.cause || (result.result.indexOf('checkmate') !== -1 ? 'By checkmate' : 'By resignation');
-        resultClass = 'win';
-    } else if (result.result.indexOf('loss') !== -1) {
-        message = 'You lost';
-        cause = result.cause || (result.result.indexOf('checkmate') !== -1 ? 'By checkmate' : 'By resignation');
-        resultClass = 'loss';
-    } else if (result.result.indexOf('draw') !== -1) {
-        message = 'Draw';
-        cause = result.cause || 'By agreement';
-        resultClass = 'draw';
+    // Handle different result formats (string or object)
+    if (typeof result === 'string') {
+        // Legacy format (just 'win', 'loss', or 'draw')
+        message = result === 'win' ? 'You won!' : (result === 'loss' ? 'You lost' : 'Draw');
+        resultClass = result;
+    } else {
+        // Handle object format with detailed information
+        if (result.result === 'win' || result.result.includes('win')) {
+            message = 'You won!';
+            resultClass = 'win';
+            cause = result.result_type ? getCauseDescription(result.result_type) : '';
+        } else if (result.result === 'loss' || result.result.includes('loss')) {
+            message = 'You lost';
+            resultClass = 'loss';
+            cause = result.result_type ? getCauseDescription(result.result_type) : '';
+        } else if (result.result === 'draw' || result.result.includes('draw')) {
+            message = 'Draw';
+            resultClass = 'draw';
+            cause = result.result_type ? getCauseDescription(result.result_type) : '';
+        }
     }
 
-    // New structure: large header for result and a smaller cause underneath
+    // Format HTML with clear result header and cause
     resultMessage.innerHTML = `
         <div class="result-header">${message}</div>
-        <div class="result-cause">${cause}</div>
+        ${cause ? `<div class="result-cause">${cause}</div>` : ''}
     `;
+    
+    // Apply appropriate styling class
     gameResult.className = `game-result-panel ${resultClass}`;
     gameResult.style.display = 'block';
 
@@ -1356,7 +1367,7 @@ function showGameResult(result) {
     disableGameInteraction();
 
     // Show a notification
-    showNotification(`${message} ${cause}`, resultClass === 'win' ? 'success' :
+    showNotification(`${message} ${cause}`, resultClass === 'win' ? 'success' : 
         (resultClass === 'loss' ? 'error' : 'info'));
 
     // Update game status display
@@ -1365,8 +1376,23 @@ function showGameResult(result) {
         gameStatus.textContent = `${message} ${cause}`;
     }
 
-    // Scroll the result into view
+    // Ensure the result is visible
     gameResult.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Helper function to get descriptive cause text
+function getCauseDescription(resultType) {
+    switch (resultType) {
+        case 'checkmate': return 'By checkmate';
+        case 'resignation': return 'By resignation';
+        case 'timeout': return 'By timeout';
+        case 'stalemate': return 'By stalemate';
+        case 'agreement': return 'By agreement';
+        case 'fifty_move': return 'By fifty-move rule';
+        case 'insufficient': return 'By insufficient material';
+        case 'repetition': return 'By threefold repetition';
+        default: return resultType ? `By ${resultType}` : '';
+    }
 }
 
 // Update ELO calculation and display logic
@@ -2440,30 +2466,7 @@ STATE.socket.on('game_started', (gameData) => {
     // Update game status
     STATE.gameStatus = 'completed';
 
-    // Process the result with the enhanced result information
-    if (result.result_type) {
-        // If we have a specific result type, add it to the result object
-        if (!result.result) {
-            // Set a default result based on winner
-            if (result.winner === 'draw') {
-                result.result = 'draw';
-            } else if (result.winner === STATE.userId) {
-                result.result = 'win';
-            } else {
-                result.result = 'loss';
-            }
-        }
-
-        // Create a combined result type for the showGameResult function
-        if (result.result === 'draw') {
-            result.result = `draw_${result.result_type}`;
-        } else {
-            // For wins/losses, prefix them with the specific cause
-            result.result = `${result.result}_${result.result_type}`;
-        }
-    }
-
-    // Show game result
+    // Process and display the game result
     showGameResult(result);
 });
 
