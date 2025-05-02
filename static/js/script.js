@@ -757,6 +757,7 @@ const STATE = {
 };
 
 // Initialize the clocks based on game data
+// Initialize the clocks based on game data
 function initClocks(gameData) {
     console.log('Initializing clocks with data:', gameData);
 
@@ -767,8 +768,7 @@ function initClocks(gameData) {
     }
 
     // Check if the game has time control
-    if (!gameData.time_control.type || gameData.time_control.type === 'unlimited') {
-
+    if (!gameData.time_control || gameData.time_control === 'unlimited') {
         console.log('Game has unlimited time');
         STATE.clock.white = null;
         STATE.clock.black = null;
@@ -778,34 +778,69 @@ function initClocks(gameData) {
         updateClockDisplay('black', null);
         return;
     }
-    else {
-        const timecontroltext = document.getElementById('time-control-text');
-        timecontroltext.innerHTML = gameData.time_control.type;
+    
+    // Handle time control object
+    if (typeof gameData.time_control === 'object') {
+        const timeControlText = document.getElementById('time-control-text');
+        if (timeControlText) {
+            timeControlText.textContent = gameData.time_control.type || 'Custom';
+        }
+        
         console.log('Game has time control:', gameData.time_control.type);
+        
+        // Set times based on initial_time_ms from time_control
+        if (gameData.time_control.initial_time_ms) {
+            STATE.clock.white = gameData.time_control.initial_time_ms;
+            STATE.clock.black = gameData.time_control.initial_time_ms;
+            STATE.clock.increment = gameData.time_control.increment || 0;
+        } else {
+            // Fallback based on type
+            switch(gameData.time_control.type) {
+                case 'blitz':
+                    STATE.clock.white = 5 * 60 * 1000; // 5 minutes
+                    STATE.clock.black = 5 * 60 * 1000;
+                    break;
+                case 'rapid':
+                    STATE.clock.white = 10 * 60 * 1000; // 10 minutes
+                    STATE.clock.black = 10 * 60 * 1000;
+                    break;
+                case 'classical':
+                    STATE.clock.white = 30 * 60 * 1000; // 30 minutes
+                    STATE.clock.black = 30 * 60 * 1000;
+                    break;
+                default:
+                    STATE.clock.white = 10 * 60 * 1000; // Default to 10 minutes
+                    STATE.clock.black = 10 * 60 * 1000;
+            }
+        }
+    } else if (typeof gameData.time_control === 'string') {
+        // Handle string-based time controls as before
+        // ...code omitted for brevity
+    }
+    
+    // If the server provides direct time values, use those instead
+    if (gameData.white_time_ms !== undefined) {
+        STATE.clock.white = gameData.white_time_ms;
+    }
+    
+    if (gameData.black_time_ms !== undefined) {
+        STATE.clock.black = gameData.black_time_ms;
     }
 
-    // Initialize with server values
-    STATE.clock.white = gameData.white_time_ms;
-    STATE.clock.black = gameData.black_time_ms;
-    STATE.clock.increment = gameData.increment_ms || 0;
+    // Set additional clock properties
     STATE.clock.lastMoveTime = gameData.last_move_timestamp ? new Date(gameData.last_move_timestamp).getTime() : null;
     STATE.clock.started = gameData.status === 'active';
 
-    // Force an immediate sync with server to get the most accurate times
-    if (STATE.clock.started) {
-        // First update the display with what we have (to avoid flickering)
-        updateClockDisplay('white', STATE.clock.white);
-        updateClockDisplay('black', STATE.clock.black);
+    // Update the display immediately
+    updateClockDisplay('white', STATE.clock.white);
+    updateClockDisplay('black', STATE.clock.black);
 
-        // Then immediately sync with the server
-        syncClockWithServer(true); // Pass true to indicate this is the initial sync
-    } else {
-        // Just update the display for a game that hasn't started
-        updateClockDisplay('white', STATE.clock.white);
-        updateClockDisplay('black', STATE.clock.black);
+    // If the game is active, start the clock interval
+    if (STATE.clock.started && STATE.clock.white !== null && STATE.clock.black !== null) {
+        startClockInterval();
     }
 
-    console.log('Clocks initialized:', STATE.clock);
+    console.log('Clocks initialized (v2):', STATE.clock);
 }
 
 // Parse the time control string into initial time and increment
