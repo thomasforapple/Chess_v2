@@ -3370,7 +3370,7 @@ function updateTimeControlDisplay(timeControl) {
             const increment = timeControl.increment
                 ? Math.floor(timeControl.increment / 1000)
                 : 0;
-                
+            console.log('Time : ', initialMinutes,'+', increment);
             switch(type) {
                 case 'blitz':
                     icon = '<i class="fas fa-bolt"></i>';
