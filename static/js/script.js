@@ -1385,6 +1385,7 @@ function updateGameStateUI() {
 }
 
 // Function to show game result UI
+// Function to show game result UI
 function showGameResult(result) {
     const gameResult = document.getElementById('game-result');
     const resultMessage = document.getElementById('result-message');
@@ -1396,23 +1397,76 @@ function showGameResult(result) {
 
     console.log('Showing game result:', result);
 
-    // Determine the result and cause
+    // Determine the result type and message
     let message = '';
     let cause = '';
     let resultClass = '';
 
-    if (result.result.indexOf('win') !== -1) {
-        message = 'You won';
-        cause = result.cause || (result.result.indexOf('checkmate') !== -1 ? 'By checkmate' : 'By resignation');
-        resultClass = 'win';
-    } else if (result.result.indexOf('loss') !== -1) {
-        message = 'You lost';
-        cause = result.cause || (result.result.indexOf('checkmate') !== -1 ? 'By checkmate' : 'By resignation');
-        resultClass = 'loss';
-    } else if (result.result.indexOf('draw') !== -1) {
+    // Check if the current user is the winner
+    const isWinner = result.winner === STATE.userId;
+    const isLoser = result.loser === STATE.userId;
+    const isDraw = result.result === 'draw' || result.winner === 'draw';
+
+    // Handle different result types
+    if (isDraw) {
         message = 'Draw';
-        cause = result.cause || 'By agreement';
         resultClass = 'draw';
+        
+        // Determine draw cause
+        if (result.result_type) {
+            switch(result.result_type) {
+                case 'agreement':
+                    cause = 'By agreement';
+                    break;
+                case 'stalemate':
+                    cause = 'By stalemate';
+                    break;
+                case 'fifty_move':
+                    cause = 'By fifty-move rule';
+                    break;
+                case 'insufficient':
+                    cause = 'By insufficient material';
+                    break;
+                default:
+                    cause = 'By ' + result.result_type;
+            }
+        } else {
+            cause = 'By agreement';
+        }
+    } 
+    else if (result.result === 'timeout') {
+        // Handle timeout result
+        if (isLoser) {
+            message = 'You lost';
+            resultClass = 'loss';
+            cause = 'On time';
+        } else {
+            message = 'You won';
+            resultClass = 'win';
+            cause = 'Opponent ran out of time';
+        }
+    }
+    else if (result.result === 'resigned' || result.result === 'resignation') {
+        // Handle resignation
+        if (isLoser) {
+            message = 'You lost';
+            resultClass = 'loss';
+            cause = 'By resignation';
+        } else {
+            message = 'You won';
+            resultClass = 'win';
+            cause = 'Opponent resigned';
+        }
+    }
+    else if (isWinner) {
+        message = 'You won';
+        resultClass = 'win';
+        cause = result.result_type ? 'By ' + result.result_type : 'By checkmate';
+    } 
+    else {
+        message = 'You lost';
+        resultClass = 'loss';
+        cause = result.result_type ? 'By ' + result.result_type : 'By checkmate';
     }
 
     // New structure: large header for result and a smaller cause underneath
@@ -1420,6 +1474,8 @@ function showGameResult(result) {
         <div class="result-header">${message}</div>
         <div class="result-cause">${cause}</div>
     `;
+    
+    // Set the appropriate class for styling
     gameResult.className = `game-result-panel ${resultClass}`;
     gameResult.style.display = 'block';
 
@@ -1427,19 +1483,18 @@ function showGameResult(result) {
     disableGameInteraction();
 
     // Show a notification
-    showNotification(`${message} ${cause}`, resultClass === 'win' ? 'success' :
+    showNotification(`${message} - ${cause}`, resultClass === 'win' ? 'success' :
         (resultClass === 'loss' ? 'error' : 'info'));
 
     // Update game status display
     const gameStatus = document.getElementById('game-status');
     if (gameStatus) {
-        gameStatus.textContent = `${message} ${cause}`;
+        gameStatus.textContent = `Game over - ${message} ${cause}`;
     }
 
     // Scroll the result into view
     gameResult.scrollIntoView({ behavior: 'smooth' });
 }
-
 // Update ELO calculation and display logic
 function updateELODisplay(playerRating, opponentRating, gameTimeControl) {
     // playerRating and opponentRating are objects with keys: blitz, rapid, classical
@@ -1999,8 +2054,7 @@ function setInitialBoardOrientation() {
 }
 
 
-// Update player boxes based on board orientation
-// Update player boxes based on board orientation and player color
+
 function updatePlayerBoxes() {
     const topPlayerBox = document.getElementById('top-player-box');
     const bottomPlayerBox = document.getElementById('bottom-player-box');
@@ -2036,7 +2090,6 @@ function updatePlayerBoxes() {
         bottomPlayerBox.appendChild(playerInfo);
     }
 }
-
 // Execute a move locally (on the client)
 // Replace the entire executeLocalMove function in script.js
 function executeLocalMove(moveObj) {

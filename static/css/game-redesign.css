@@ -121,14 +121,41 @@
 }
 
 /* Player info styles */
+/* Player info styles - revised layout */
 .player-info {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: var(--space-sm);
   width: 100%;
 }
 
+.avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--panel-bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.player-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.player-details h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .player-clock {
+  margin-left: auto;
   background-color: var(--panel-bg);
   border-radius: 4px;
   padding: var(--space-xs) var(--space-sm);
@@ -178,6 +205,7 @@
 }
 
 /* Game result panel (appears above the board) */
+/* Redesigned game result panel */
 .game-result-panel {
   position: absolute;
   top: 50%;
@@ -186,89 +214,71 @@
   width: 90%;
   max-width: 400px;
   background-color: var(--card-bg);
-  border-radius: 8px;
-  padding: var(--space-xl);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: var(--space-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 1000;
-  animation: zoomIn 0.4s ease-in-out;
+  animation: fadeIn 0.5s ease-in-out;
   text-align: center;
-  border-left: 6px solid #777;
+  overflow: hidden;
 }
 
-.game-result-panel.win {
-  border-left-color: #2ecc71;
+.game-result-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background-color: #777;
 }
 
-.game-result-panel.loss {
-  border-left-color: #e74c3c;
+.game-result-panel.win::before {
+  background-color: #2ecc71;
 }
 
-.game-result-panel.draw {
-  border-left-color: #f39c12;
+.game-result-panel.loss::before {
+  background-color: #e74c3c;
+}
+
+.game-result-panel.draw::before {
+  background-color: #f39c12;
 }
 
 .result-header {
-  font-size: 2.2rem;
+  font-size: 1.8rem;
   font-weight: bold;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-sm);
   color: var(--text-color);
 }
 
-.game-result-panel.win .result-header {
-  color: #2ecc71;
-}
-
-.game-result-panel.loss .result-header {
-  color: #e74c3c;
-}
-
-.game-result-panel.draw .result-header {
-  color: #f39c12;
-}
-
 .result-cause {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   color: var(--text-secondary);
   margin-bottom: var(--space-lg);
 }
 
 .result-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--space-md);
   margin-top: var(--space-lg);
 }
 
-/* Make buttons in result panel more prominent */
-.game-result-panel .btn {
+.result-actions .btn {
+  min-width: 140px;
   padding: var(--space-md) var(--space-lg);
-  font-weight: bold;
-  flex: 1;
 }
 
-.game-result-panel .btn-primary {
-  background-color: var(--button-primary);
-  color: var(--text-dark);
-}
-
-/* Add a confetti effect for wins */
-.game-result-panel.win::before {
-  content: '';
-  position: absolute;
-  top: -20px;
-  left: 0;
-  right: 0;
-  height: 20px;
-  background: linear-gradient(135deg, #2ecc71, #1abc9c, #3498db);
-  opacity: 0.6;
-  border-radius: 4px;
-  animation: confetti 1.5s ease-in-out infinite;
-}
-
-@keyframes confetti {
-  0% { transform: translateY(0); opacity: 0.6; }
-  50% { transform: translateY(-10px); opacity: 0.8; }
-  100% { transform: translateY(0); opacity: 0.6; }
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+      transform: translate(-50%, -40%);
+  }
+  to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+  }
 }
 
 /* Button icon styles */
