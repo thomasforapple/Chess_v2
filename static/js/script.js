@@ -454,6 +454,7 @@ async function fetchGameData(gameId, token) {
 
         const gameData = await response.json();
         console.log('Game data loaded:', gameData);
+        console.log('Time control:', gameData.time_control.type);
 
         // Update game state
         STATE.gameStatus = gameData.status;
