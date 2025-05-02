@@ -40,7 +40,7 @@
             <div class="game-actions">
                 <button id="resign-btn" class="btn btn-danger">Abandonner</button>
                 <button id="draw-btn" class="btn btn-secondary">Proposer nulle</button>
-                <button id="flip-board" class="btn btn-light">Retourner l’échiquier</button>
+                <button id="flip-board" class="btn btn-light">Retourner l'échiquier</button>
             </div>
             
             <div class="game-info-panel">
@@ -51,7 +51,7 @@
                 </div>
                 <div class="time-control" id="time-control-display">
                     <p>
-                        <span id="time-control-icon"></span>
+                        <span id="time-control-icon"><i class="fas fa-infinity"></i></span>
                         Contrôle du temps : <span id="time-control-text">Illimité</span>
                     </p>
                 </div>
@@ -67,7 +67,7 @@
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="player-details">
-                        <h3 id="opponent-name">En attente d’un adversaire...</h3>
+                        <h3 id="opponent-name">En attente d'un adversaire...</h3>
                         <span id="opponent-rating"></span>
                     </div>
                     <div class="player-clock">
@@ -76,17 +76,7 @@
                 </div>
             </div>
             
-            <!-- Résultat de la partie -->
-            <div id="game-result" class="game-result-panel" style="display:none;">
-                <div class="result-header">
-                    <h3 id="result-message"></h3>
-                </div>
-                <div class="result-actions">
-                    <a href="/dashboard" class="btn btn-primary">Retour au tableau de bord</a>
-                    <button id="rematch-btn" class="btn btn-light">Demander une revanche</button>
-                </div>
-            </div>
-            
+            <!-- Échiquier -->
             <div class="board-container">
                 <div class="board" id="board"></div>
                 <svg class="overlay" id="arrow-overlay"></svg>
@@ -108,6 +98,17 @@
                 </div>
             </div>
 
+            <!-- Résultat de la partie -->
+            <div id="game-result" class="game-result-panel" style="display:none;">
+                <div id="result-message">
+                    <!-- Will be filled by JavaScript -->
+                </div>
+                <div class="result-actions">
+                    <a href="/dashboard" class="btn btn-light">Retour au tableau de bord</a>
+                    <button id="rematch-btn" class="btn btn-primary">Demander une revanche</button>
+                </div>
+            </div>
+
             <!-- Promotion de pion -->
             <div class="promotion-overlay" id="promotion-overlay" style="display:none;">
                 <div class="promotion-pieces" id="promotion-pieces">
@@ -125,7 +126,7 @@
         </div>
         
         <!-- Chat de la partie (en bas) -->
-        <div class="game-chat" style="display:none;">
+        <div class="game-chat">
             <h3>Chat de la partie</h3>
             <div id="chat-messages" class="chat-messages"></div>
             <div class="chat-input">
