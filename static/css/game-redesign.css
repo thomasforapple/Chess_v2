@@ -121,41 +121,40 @@
 }
 
 /* Player info styles */
-/* Add this to game-redesign.css */
 .player-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .player-clock {
-    background-color: var(--panel-bg);
-    border-radius: 4px;
-    padding: var(--space-xs) var(--space-sm);
-    text-align: center;
-    min-width: 80px;
+  background-color: var(--panel-bg);
+  border-radius: 4px;
+  padding: var(--space-xs) var(--space-sm);
+  text-align: center;
+  min-width: 80px;
 }
 
 .clock-display {
-    font-family: monospace;
-    font-size: 1.5rem;
-    font-weight: bold;
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 .clock-active {
-    color: var(--button-primary);
-    animation: clock-pulse 1s infinite;
+  color: var(--button-primary);
+  animation: clock-pulse 1s infinite;
 }
 
 .clock-low {
-    color: var(--button-danger);
+  color: var(--button-danger);
 }
 
 @keyframes clock-pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.8; }
-    100% { opacity: 1; }
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
 }
 
 /* Game status container */
@@ -180,55 +179,108 @@
 
 /* Game result panel (appears above the board) */
 .game-result-panel {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 400px;
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: var(--space-md);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    animation: fadeIn 0.5s ease-in-out;
-    text-align: center;
-    border-left: 4px solid #777;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 400px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: var(--space-xl);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  animation: zoomIn 0.4s ease-in-out;
+  text-align: center;
+  border-left: 6px solid #777;
 }
 
 .game-result-panel.win {
-    border-left-color: #2ecc71;
+  border-left-color: #2ecc71;
 }
 
 .game-result-panel.loss {
-    border-left-color: #e74c3c;
+  border-left-color: #e74c3c;
 }
 
 .game-result-panel.draw {
-    border-left-color: #f39c12;
+  border-left-color: #f39c12;
 }
 
 .result-header {
-    font-size: 1.8rem;
-    font-weight: bold;
-    margin-bottom: var(--space-sm);
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: var(--space-md);
+  color: var(--text-color);
+}
+
+.game-result-panel.win .result-header {
+  color: #2ecc71;
+}
+
+.game-result-panel.loss .result-header {
+  color: #e74c3c;
+}
+
+.game-result-panel.draw .result-header {
+  color: #f39c12;
 }
 
 .result-cause {
-    font-size: 1.2rem;
-    color: var(--text-secondary);
+  font-size: 1.4rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.result-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+/* Make buttons in result panel more prominent */
+.game-result-panel .btn {
+  padding: var(--space-md) var(--space-lg);
+  font-weight: bold;
+  flex: 1;
+}
+
+.game-result-panel .btn-primary {
+  background-color: var(--button-primary);
+  color: var(--text-dark);
+}
+
+/* Add a confetti effect for wins */
+.game-result-panel.win::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(135deg, #2ecc71, #1abc9c, #3498db);
+  opacity: 0.6;
+  border-radius: 4px;
+  animation: confetti 1.5s ease-in-out infinite;
+}
+
+@keyframes confetti {
+  0% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-10px); opacity: 0.8; }
+  100% { transform: translateY(0); opacity: 0.6; }
 }
 
 /* Add result color variants */
-.game-result-panel.win {
+.win {
   border-left: 4px solid #2ecc71;
 }
 
-.game-result-panel.loss {
+.loss {
   border-left: 4px solid #e74c3c;
 }
 
-.game-result-panel.draw {
+.draw {
   border-left: 4px solid #f39c12;
 }
 
@@ -335,11 +387,11 @@
 
 /* Animations */
 @keyframes zoomIn {
-  from {
+  0% {
     transform: translate(-50%, -50%) scale(0.9);
     opacity: 0;
   }
-  to {
+  100% {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
   }
