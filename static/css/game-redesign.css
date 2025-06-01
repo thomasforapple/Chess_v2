@@ -206,11 +206,12 @@
 
 /* Game result panel (appears above the board) */
 /* Redesigned game result panel */
+/* REPLACE the .game-result-panel section around line 340 */
 .game-result-panel {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  /* REMOVED: transform: translate(-50%, -50%); */
   width: 90%;
   max-width: 400px;
   background-color: var(--card-bg);
@@ -218,21 +219,22 @@
   padding: var(--space-lg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 1000;
-  animation: fadeIn 0.5s ease-in-out;
   text-align: center;
   overflow: hidden;
+  
+  /* NEW: Initial hidden state */
+  opacity: 0;
+  transform: translate(-50%, -40%) scale(0.9);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.game-result-panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 6px;
-  height: 100%;
-  background-color: #777;
+/* NEW: Smooth show state */
+.game-result-panel.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
+/* REMOVE: @keyframes fadeIn - delete entire block */
 .game-result-panel.win::before {
   background-color: #2ecc71;
 }
