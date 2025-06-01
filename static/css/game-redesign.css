@@ -272,16 +272,7 @@
   padding: var(--space-md) var(--space-lg);
 }
 
-@keyframes fadeIn {
-  from {
-      opacity: 0;
-      transform: translate(-50%, -40%);
-  }
-  to {
-      opacity: 1;
-      transform: translate(-50%, -50%);
-  }
-}
+
 
 /* Button icon styles */
 .btn-icon {
