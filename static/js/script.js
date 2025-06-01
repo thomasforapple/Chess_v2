@@ -1384,12 +1384,158 @@ function updateGameStateUI() {
     precomputeLegalMoves();
 }
 
-// Function to show game result UI
-// Function to show game result UI
-gameResult.className = 'game-result-panel'; // Reset classes
-    gameResult.style.display = 'block'; // Show but hidden via CSS
-    gameResult.offsetHeight; // Force reflow
-    gameResult.classList.add('show', resultClass); // Trigger animation
+// Replace the showGameResult function in script.js (around line 2100)
+
+function showGameResult(result) {
+    const gameResult = document.getElementById('game-result');
+    const resultMessage = document.getElementById('result-message');
+
+    if (!gameResult || !resultMessage) {
+        console.error('Game result elements not found');
+        return;
+    }
+
+    console.log('Showing game result:', result);
+
+    // Determine the result type and message
+    let message = '';
+    let cause = '';
+    let resultClass = '';
+
+    // Check if the current user is the winner
+    const isWinner = result.winner === STATE.userId;
+    const isLoser = result.loser === STATE.userId;
+    const isDraw = result.result === 'draw' || result.winner === 'draw';
+
+    // Handle different result types
+    if (isDraw) {
+        message = 'Draw';
+        resultClass = 'draw';
+        
+        if (result.result_type) {
+            switch(result.result_type) {
+                case 'agreement':
+                    cause = 'By agreement';
+                    break;
+                case 'stalemate':
+                    cause = 'By stalemate';
+                    break;
+                case 'fifty_move':
+                    cause = 'By fifty-move rule';
+                    break;
+                case 'insufficient':
+                    cause = 'By insufficient material';
+                    break;
+                default:
+                    cause = 'By ' + result.result_type;
+            }
+        } else {
+            cause = 'By agreement';
+        }
+    } 
+    else if (result.result === 'timeout') {
+        if (isLoser) {
+            message = 'You lost';
+            resultClass = 'loss';
+            cause = 'On time';
+        } else {
+            message = 'You won';
+            resultClass = 'win';
+            cause = 'Opponent ran out of time';
+        }
+    }
+    else if (result.result === 'resigned' || result.result === 'resignation') {
+        if (isLoser) {
+            message = 'You lost';
+            resultClass = 'loss';
+            cause = 'By resignation';
+        } else {
+            message = 'You won';
+            resultClass = 'win';
+            cause = 'Opponent resigned';
+        }
+    }
+    else if (isWinner) {
+        message = 'You won';
+        resultClass = 'win';
+        cause = result.result_type ? 'By ' + result.result_type : 'By checkmate';
+    } 
+    else {
+        message = 'You lost';
+        resultClass = 'loss';
+        cause = result.result_type ? 'By ' + result.result_type : 'By checkmate';
+    }
+
+    // Set the message content
+    resultMessage.innerHTML = `
+        <div class="result-header">${message}</div>
+        <div class="result-cause">${cause}</div>
+    `;
+    
+    // ✅ SMOOTH ANIMATION: Reset classes and set up for animation
+    gameResult.className = 'game-result-panel'; // Clear all classes
+    gameResult.style.display = 'block'; // Make visible but still hidden via CSS
+    
+    // ✅ FORCE REFLOW: Ensure initial state is applied
+    gameResult.offsetHeight;
+    
+    // ✅ TRIGGER ANIMATION: Add classes to start smooth transition
+    gameResult.classList.add('show', resultClass);
+
+    // Disable game interaction
+    disableGameInteraction();
+
+    // Show a notification
+    showNotification(`${message} - ${cause}`, resultClass === 'win' ? 'success' :
+        (resultClass === 'loss' ? 'error' : 'info'));
+
+    // Update game status display
+    const gameStatus = document.getElementById('game-status');
+    if (gameStatus) {
+        gameStatus.textContent = `Game over - ${message} ${cause}`;
+    }
+
+    // ✅ SMOOTH SCROLL: Scroll the result into view smoothly
+    setTimeout(() => {
+        gameResult.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center'
+        });
+    }, 100); // Small delay to let animation start
+}
+
+// ✅ ADD FUNCTION: Hide game result with animation
+function hideGameResult() {
+    const gameResult = document.getElementById('game-result');
+    if (!gameResult) return;
+    
+    // Remove show class and add hide class
+    gameResult.classList.remove('show');
+    gameResult.classList.add('hide');
+    
+    // After animation completes, fully hide
+    setTimeout(() => {
+        gameResult.style.display = 'none';
+        gameResult.classList.remove('hide');
+    }, 300); // Match CSS transition duration
+}
+
+// ✅ IMPROVED: Update result panel for loading existing games
+function showGameResultForExistingGame(gameData) {
+    if (gameData.status !== 'completed') return;
+    
+    // Determine result based on game data
+    const result = {
+        game_id: gameData.game_id,
+        winner: gameData.winner,
+        result_type: gameData.result_type || 'checkmate'
+    };
+    
+    // Small delay to ensure board is loaded first
+    setTimeout(() => {
+        showGameResult(result);
+    }, 500); // Give time for board to render
+}
 // Update ELO calculation and display logic
 function updateELODisplay(playerRating, opponentRating, gameTimeControl) {
     // playerRating and opponentRating are objects with keys: blitz, rapid, classical
