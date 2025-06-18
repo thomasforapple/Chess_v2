@@ -9,9 +9,7 @@ const PIECE_TYPES = {
 };
 
 // ======= ChessRules Object =======
-// Moteur principal du jeu pour validation et génération de coups
 const ChessRules = {
-    // Constantes pour l'état du jeu
     CASTLING_RIGHTS: {
         WHITE_KINGSIDE: 0x1,
         WHITE_QUEENSIDE: 0x2,
@@ -19,7 +17,7 @@ const ChessRules = {
         BLACK_QUEENSIDE: 0x8
     },
     PIECE_OFFSETS: {
-        'p': [], // Les coups de pions sont gérés séparément
+        'p': [],
         'P': [],
         'n': [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]],
         'N': [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]],
@@ -34,22 +32,19 @@ const ChessRules = {
     },
     SLIDING_PIECES: ['b', 'B', 'r', 'R', 'q', 'Q'],
 
-    // Suivi de l'état du jeu
     gameState: {
-        position: [], // Position actuelle (sera remplie dans setupPosition)
-        activeColor: 'w', // 'w' ou 'b'
-        castlingRights: 0x0F, // Tous les droits de roque par défaut
-        enPassantTarget: null, // Case où la prise en passant est possible
-        halfMoveClock: 0, // Pour la règle des 50 coups
+        position: [],
+        activeColor: 'w',
+        castlingRights: 0x0F,
+        enPassantTarget: null,
+        halfMoveClock: 0,
         fullMoveNumber: 1,
-        kingPositions: {w: -1, b: -1} // Suivi des positions des rois pour la détection d'échecs
+        kingPositions: {w: -1, b: -1}
     },
 
-    // Initialiser l'état du jeu à partir d'un tableau de position
     setupPosition: function (position) {
         this.gameState.position = [...position];
 
-        // Trouver les positions des rois
         for (let i = 0; i < 64; i++) {
             const piece = position[i];
             if (piece === 'K') {
@@ -66,7 +61,6 @@ const ChessRules = {
         this.gameState.fullMoveNumber = 1;
     },
 
-    // Analyser la notation FEN et mettre à jour l'état interne
     parseFEN: function (fen) {
         const parts = fen.trim().split(' ');
         const position = new Array(64).fill('');
@@ -90,28 +84,23 @@ const ChessRules = {
 
         this.gameState.activeColor = parts[1] === 'w' ? 'w' : 'b';
 
-        // Droits de roque
         this.gameState.castlingRights = 0;
         if (parts[2].includes('K')) this.gameState.castlingRights |= this.CASTLING_RIGHTS.WHITE_KINGSIDE;
         if (parts[2].includes('Q')) this.gameState.castlingRights |= this.CASTLING_RIGHTS.WHITE_QUEENSIDE;
         if (parts[2].includes('k')) this.gameState.castlingRights |= this.CASTLING_RIGHTS.BLACK_KINGSIDE;
         if (parts[2].includes('q')) this.gameState.castlingRights |= this.CASTLING_RIGHTS.BLACK_QUEENSIDE;
 
-        // Cible en passant
         this.gameState.enPassantTarget = parts[3] !== '-' ? this.algebraicToIndex(parts[3]) : null;
 
-        // Compteur de demi-coups et numéro de coup complet
         this.gameState.halfMoveClock = parseInt(parts[4]) || 0;
         this.gameState.fullMoveNumber = parseInt(parts[5]) || 1;
 
         return position;
     },
 
-    // Générer la FEN à partir de la position actuelle
     generateFEN: function () {
         let fen = '';
 
-        // Placement des pièces
         for (let rank = 0; rank < 8; rank++) {
             let emptySquares = 0;
             for (let file = 0; file < 8; file++) {
@@ -138,10 +127,8 @@ const ChessRules = {
             }
         }
 
-        // Couleur active
         fen += ' ' + this.gameState.activeColor;
 
-        // Droits de roque
         let castling = '';
         if (this.gameState.castlingRights & this.CASTLING_RIGHTS.WHITE_KINGSIDE) castling += 'K';
         if (this.gameState.castlingRights & this.CASTLING_RIGHTS.WHITE_QUEENSIDE) castling += 'Q';
@@ -149,53 +136,44 @@ const ChessRules = {
         if (this.gameState.castlingRights & this.CASTLING_RIGHTS.BLACK_QUEENSIDE) castling += 'q';
         fen += ' ' + (castling || '-');
 
-        // Cible en passant
         fen += ' ' + (this.gameState.enPassantTarget !== null ?
             this.indexToAlgebraic(this.gameState.enPassantTarget) : '-');
 
-        // Compteur de demi-coups et numéro de coup complet
         fen += ' ' + this.gameState.halfMoveClock;
         fen += ' ' + this.gameState.fullMoveNumber;
 
         return fen;
     },
 
-    // Convertir la notation algébrique en index de l'échiquier
     algebraicToIndex: function (algebraic) {
-        const file = algebraic.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, ...
-        const rank = 8 - parseInt(algebraic[1]); // Correction du bug typo
+        const file = algebraic.charCodeAt(0) - 97;
+        const rank = 8 - parseInt(algebraic[1]);
         return rank * 8 + file;
     },
 
-    // Convertir l'index de l'échiquier en notation algébrique
     indexToAlgebraic: function (index) {
         const file = index % 8;
         const rank = Math.floor(index / 8);
         return String.fromCharCode(97 + file) + (8 - rank);
     },
 
-    // Vérifier si une case est sur l'échiquier
     isOnBoard: function (rank, file) {
         return rank >= 0 && rank < 8 && file >= 0 && file < 8;
     },
 
-    // Obtenir la couleur de la pièce ('w' ou 'b' ou null si vide)
     getPieceColor: function (piece) {
         if (piece === '') return null;
         return piece === piece.toUpperCase() ? 'w' : 'b';
     },
 
-    // Vérifier si une pièce est d'une couleur spécifique
     isPieceColor: function (piece, color) {
         if (piece === '') return false;
         return color === 'w' ? piece === piece.toUpperCase() : piece === piece.toLowerCase();
     },
 
-    // Vérifier si le roi est en échec
     isInCheck: function (position, kingPos, color) {
         const enemyColor = color === 'w' ? 'b' : 'w';
 
-        // Vérifier les attaques de chaque pièce ennemie
         for (let i = 0; i < 64; i++) {
             const piece = position[i];
             if (piece === '' || this.getPieceColor(piece) !== enemyColor) continue;
@@ -211,7 +189,6 @@ const ChessRules = {
         return false;
     },
 
-    // Générer tous les coups possibles pour une pièce spécifique
     generatePieceMoves: function (position, fromIndex, checkLegality = true) {
         const piece = position[fromIndex];
         if (piece === '') return [];
@@ -222,12 +199,10 @@ const ChessRules = {
         const fromFile = fromIndex % 8;
         const moves = [];
 
-        // Gérer les coups de pions
         if (pieceType === 'p') {
             const direction = color === 'w' ? -1 : 1;
             const startRank = color === 'w' ? 6 : 1;
 
-            // Coup en avant
             const oneForward = fromIndex + direction * 8;
             if (oneForward >= 0 && oneForward < 64 && position[oneForward] === '') {
                 moves.push({from: fromIndex, to: oneForward});
@@ -248,18 +223,15 @@ const ChessRules = {
                 const toFile = toIndex % 8;
                 if (Math.abs(fromFile - toFile) !== 1) continue;
 
-                // Capture normale
                 if (position[toIndex] !== '' && this.isPieceColor(position[toIndex], color === 'w' ? 'b' : 'w')) {
                     moves.push({from: fromIndex, to: toIndex});
                 }
 
-                // Capture en passant
                 if (toIndex === this.gameState.enPassantTarget) {
                     moves.push({from: fromIndex, to: toIndex, flags: 'en_passant'});
                 }
             }
         }
-        // Coups de cavalier
         else if (pieceType === 'n') {
             for (const [rankOffset, fileOffset] of this.PIECE_OFFSETS[piece]) {
                 const toRank = fromRank + rankOffset;
@@ -275,7 +247,6 @@ const ChessRules = {
                 }
             }
         }
-        // Pièces glissantes (fou, tour, dame)
         else if (this.SLIDING_PIECES.includes(pieceType)) {
             for (const [rankOffset, fileOffset] of this.PIECE_OFFSETS[piece]) {
                 let toRank = fromRank + rankOffset;
@@ -285,16 +256,13 @@ const ChessRules = {
                     const toIndex = toRank * 8 + toFile;
                     const targetPiece = position[toIndex];
 
-                    // Case vide
                     if (targetPiece === '') {
                         moves.push({from: fromIndex, to: toIndex});
                     }
-                    // Capture
                     else if (this.isPieceColor(targetPiece, color === 'w' ? 'b' : 'w')) {
                         moves.push({from: fromIndex, to: toIndex});
                         break;
                     }
-                    // Pièce propre - arrêter de regarder dans cette direction
                     else {
                         break;
                     }
@@ -304,9 +272,7 @@ const ChessRules = {
                 }
             }
         }
-        // Coups de roi
         else if (pieceType === 'k') {
-            // Coups normaux de roi
             for (const [rankOffset, fileOffset] of this.PIECE_OFFSETS[piece]) {
                 const toRank = fromRank + rankOffset;
                 const toFile = fromFile + fileOffset;
@@ -316,51 +282,59 @@ const ChessRules = {
                 const toIndex = toRank * 8 + toFile;
                 const targetPiece = position[toIndex];
 
-                // Case vide ou capture
                 if (targetPiece === '' || this.isPieceColor(targetPiece, color === 'w' ? 'b' : 'w')) {
                     moves.push({from: fromIndex, to: toIndex});
                 }
             }
 
-            // Roque
+            // Castling - FIXED: Only check specific castling squares
             if (!checkLegality || !this.isInCheck(position, fromIndex, color)) {
-                // Petit roque
+                // Kingside castling
                 if ((color === 'w' && (this.gameState.castlingRights & this.CASTLING_RIGHTS.WHITE_KINGSIDE)) ||
                     (color === 'b' && (this.gameState.castlingRights & this.CASTLING_RIGHTS.BLACK_KINGSIDE))) {
 
-                    const kingFinalPos = color === 'w' ? 62 : 6;
-                    const kingStartPos = color === 'w' ? 60 : 4;
-
-                    if (position[kingFinalPos - 1] === '' && position[kingFinalPos] === '') {
-                        // Vérifier si les cases ne sont pas sous attaque
-                        if (!checkLegality ||
-                            (!this.isSquareAttacked(position, kingStartPos + 1, color) &&
-                                !this.isSquareAttacked(position, kingFinalPos, color))) {
-                            moves.push({from: fromIndex, to: kingFinalPos, flags: 'kingside_castle'});
+                    const kingStartFile = 4; // e-file
+                    const kingTargetFile = 6; // g-file
+                    const rookFile = 7; // h-file
+                    
+                    if (fromFile === kingStartFile) { // Only allow castling from starting position
+                        const targetIndex = fromRank * 8 + kingTargetFile;
+                        const passThroughIndex = fromRank * 8 + 5; // f-file
+                        
+                        if (position[passThroughIndex] === '' && position[targetIndex] === '') {
+                            if (!checkLegality ||
+                                (!this.isSquareAttacked(position, passThroughIndex, color) &&
+                                 !this.isSquareAttacked(position, targetIndex, color))) {
+                                moves.push({from: fromIndex, to: targetIndex, flags: 'kingside_castle'});
+                            }
                         }
                     }
                 }
 
-                // Grand roque
+                // Queenside castling
                 if ((color === 'w' && (this.gameState.castlingRights & this.CASTLING_RIGHTS.WHITE_QUEENSIDE)) ||
                     (color === 'b' && (this.gameState.castlingRights & this.CASTLING_RIGHTS.BLACK_QUEENSIDE))) {
 
-                    const kingFinalPos = color === 'w' ? 58 : 2;
-                    const kingStartPos = color === 'w' ? 60 : 4;
-
-                    if (position[kingFinalPos + 1] === '' && position[kingFinalPos] === '' && position[kingFinalPos - 1] === '') {
-                        // Vérifier si les cases ne sont pas sous attaque
-                        if (!checkLegality ||
-                            (!this.isSquareAttacked(position, kingStartPos - 1, color) &&
-                                !this.isSquareAttacked(position, kingFinalPos, color))) {
-                            moves.push({from: fromIndex, to: kingFinalPos, flags: 'queenside_castle'});
+                    const kingStartFile = 4; // e-file
+                    const kingTargetFile = 2; // c-file
+                    
+                    if (fromFile === kingStartFile) { // Only allow castling from starting position
+                        const targetIndex = fromRank * 8 + kingTargetFile;
+                        const passThroughIndex = fromRank * 8 + 3; // d-file
+                        const bSquareIndex = fromRank * 8 + 1; // b-file
+                        
+                        if (position[passThroughIndex] === '' && position[targetIndex] === '' && position[bSquareIndex] === '') {
+                            if (!checkLegality ||
+                                (!this.isSquareAttacked(position, passThroughIndex, color) &&
+                                 !this.isSquareAttacked(position, targetIndex, color))) {
+                                moves.push({from: fromIndex, to: targetIndex, flags: 'queenside_castle'});
+                            }
                         }
                     }
                 }
             }
         }
 
-        // Filtrer les coups illégaux qui laisseraient le roi en échec
         if (checkLegality) {
             return moves.filter(move => this.isMoveLegal(position, move, color));
         }
@@ -368,23 +342,18 @@ const ChessRules = {
         return moves;
     },
 
-    // Vérifier si un coup est légal (ne laisse pas le roi en échec)
     isMoveLegal: function (position, move, color) {
-        // Créer une copie de la position pour faire le coup
         const newPosition = [...position];
 
-        // Déplacer la pièce
         const piece = newPosition[move.from];
         newPosition[move.to] = piece;
         newPosition[move.from] = '';
 
-        // Gestion spéciale pour la capture en passant
         if (move.flags === 'en_passant') {
             const capturedPawnPos = move.to + (color === 'w' ? 8 : -8);
             newPosition[capturedPawnPos] = '';
         }
 
-        // Gestion spéciale pour le roque
         if (move.flags === 'kingside_castle') {
             const rookFromPos = color === 'w' ? 63 : 7;
             const rookToPos = color === 'w' ? 61 : 5;
@@ -397,7 +366,6 @@ const ChessRules = {
             newPosition[rookFromPos] = '';
         }
 
-        // Trouver la position du roi après le coup
         let kingPos;
         if (piece.toLowerCase() === 'k') {
             kingPos = move.to;
@@ -405,11 +373,9 @@ const ChessRules = {
             kingPos = this.findKing(newPosition, color);
         }
 
-        // Vérifier si le roi est en échec après le coup
         return !this.isInCheck(newPosition, kingPos, color);
     },
 
-    // Vérifier si une case est attaquée par une pièce ennemie
     isSquareAttacked: function (position, index, defenderColor) {
         const attackerColor = defenderColor === 'w' ? 'b' : 'w';
 
@@ -428,7 +394,6 @@ const ChessRules = {
         return false;
     },
 
-    // Trouver la position du roi sur l'échiquier
     findKing: function (position, color) {
         const kingPiece = color === 'w' ? 'K' : 'k';
         for (let i = 0; i < 64; i++) {
@@ -436,10 +401,9 @@ const ChessRules = {
                 return i;
             }
         }
-        return -1; // Cela ne devrait jamais arriver dans une position valide
+        return -1;
     },
 
-    // Générer tous les coups légaux pour le joueur actuel
     generateAllLegalMoves: function () {
         const allMoves = [];
         const color = this.gameState.activeColor;
@@ -455,15 +419,12 @@ const ChessRules = {
         return allMoves;
     },
 
-    // Exécuter un coup sur l'échiquier
     makeMove: function (move) {
-        // Obtenir des informations sur l'état actuel avant le coup
         const piece = this.gameState.position[move.from];
         const pieceType = piece.toLowerCase();
         const color = this.getPieceColor(piece);
         const isCapture = this.gameState.position[move.to] !== '';
 
-        // Sauvegarder l'état précédent pour un éventuel retour en arrière
         const prevState = {
             position: [...this.gameState.position],
             activeColor: this.gameState.activeColor,
@@ -474,19 +435,15 @@ const ChessRules = {
             kingPositions: {...this.gameState.kingPositions}
         };
 
-        // Enregistrer la pièce capturée
         let capturedPiece = this.gameState.position[move.to];
 
-        // Déplacer la pièce
         this.gameState.position[move.to] = piece;
         this.gameState.position[move.from] = '';
 
-        // Mettre à jour les positions des rois si le roi a bougé
         if (pieceType === 'k') {
             this.gameState.kingPositions[color] = move.to;
         }
 
-        // Gestion des coups spéciaux
         if (move.flags === 'en_passant') {
             const capturedPawnPos = move.to + (color === 'w' ? 8 : -8);
             capturedPiece = this.gameState.position[capturedPawnPos];
@@ -506,7 +463,7 @@ const ChessRules = {
                 move.promotionPiece.toUpperCase() : move.promotionPiece.toLowerCase();
         }
 
-        // Mettre à jour les droits de roque
+        // Update castling rights
         if (pieceType === 'k') {
             if (color === 'w') {
                 this.gameState.castlingRights &= ~(this.CASTLING_RIGHTS.WHITE_KINGSIDE | this.CASTLING_RIGHTS.WHITE_QUEENSIDE);
@@ -532,7 +489,6 @@ const ChessRules = {
             }
         }
 
-        // Mettre à jour les droits de roque si une tour est capturée
         if (isCapture) {
             const toRank = Math.floor(move.to / 8);
             const toFile = move.to % 8;
@@ -548,32 +504,27 @@ const ChessRules = {
             }
         }
 
-        // Mettre à jour la cible en passant
+        // FIXED: En passant target setting
         if (move.flags === 'double_push') {
             this.gameState.enPassantTarget = move.from + (color === 'w' ? 8 : -8);
         } else {
             this.gameState.enPassantTarget = null;
         }
 
-        // Mettre à jour le compteur de demi-coups
         if (pieceType === 'p' || isCapture) {
             this.gameState.halfMoveClock = 0;
         } else {
             this.gameState.halfMoveClock++;
         }
 
-        // Mettre à jour le numéro de coup complet
         if (color === 'b') {
             this.gameState.fullMoveNumber++;
         }
 
-        // Changer la couleur active
         this.gameState.activeColor = color === 'w' ? 'b' : 'w';
 
-        // Vérifier si le coup était légal (le roi n'est pas en échec)
         const kingPos = this.gameState.kingPositions[color];
         if (this.isInCheck(this.gameState.position, kingPos, color)) {
-            // Coup illégal, revenir à l'état précédent
             this.gameState = prevState;
             return {success: false, reason: 'illegal_move'};
         }
@@ -590,7 +541,6 @@ const ChessRules = {
         };
     },
 
-    // Vérifier l'état actuel du jeu (normal, échec, échec et mat, pat)
     checkGameState: function () {
         const color = this.gameState.activeColor;
         const kingPos = this.gameState.kingPositions[color];
@@ -610,63 +560,51 @@ const ChessRules = {
         return 'normal';
     },
 
-    // Générer la notation algébrique pour un coup
     generateMoveNotation: function (move, isCheck, isCheckmate) {
         const piece = this.getPieceAt(move.from);
         const pieceType = piece.toLowerCase();
         const pieceSymbol = pieceType === 'p' ? '' : pieceType.toUpperCase();
 
-        // Gérer le roque
-        if (piece.toUpperCase() === 'K' && Math.abs(move.from % 8 - move.to % 8) > 1) {
-            const isKingside = move.to % 8 > move.from % 8;
-            const notation = isKingside ? 'O-O' : 'O-O-O';
+        // FIXED: Proper castling detection
+        if (piece.toLowerCase() === 'k' && move.flags && 
+            (move.flags === 'kingside_castle' || move.flags === 'queenside_castle')) {
+            const notation = move.flags === 'kingside_castle' ? 'O-O' : 'O-O-O';
             return isCheckmate ? notation + '#' : (isCheck ? notation + '+' : notation);
         }
 
         let notation = pieceSymbol;
 
-        // Ajouter la désambiguïsation si nécessaire
         if (pieceType !== 'p' && pieceType !== 'k') {
             const ambiguousMoves = this.findAmbiguousMoves(move);
             if (ambiguousMoves.length > 0) {
-                // Vérifier si la désambiguïsation par colonne est suffisante
                 const sameFileCount = ambiguousMoves.filter(m => m.from % 8 === move.from % 8).length;
                 if (sameFileCount === 0) {
-                    // La colonne est suffisante pour la désambiguïsation
                     notation += String.fromCharCode(97 + (move.from % 8));
                 } else {
-                    // Besoin de la rangée ou de la coordonnée complète
                     const sameRankCount = ambiguousMoves.filter(m => Math.floor(m.from / 8) === Math.floor(move.from / 8)).length;
                     if (sameRankCount === 0) {
-                        // La rangée est suffisante
                         notation += 8 - Math.floor(move.from / 8);
                     } else {
-                        // Besoin de la coordonnée complète
                         notation += this.indexToAlgebraic(move.from);
                     }
                 }
             }
         }
 
-        // Ajouter le symbole de capture
         const isCapture = this.getPieceAt(move.to) !== '' || move.flags === 'en_passant';
         if (isCapture) {
-            // Pour les pions, ajouter la colonne d'origine
             if (pieceSymbol === '' && !notation.includes(String.fromCharCode(97 + (move.from % 8)))) {
                 notation += String.fromCharCode(97 + (move.from % 8));
             }
             notation += 'x';
         }
 
-        // Ajouter la case de destination
         notation += this.indexToAlgebraic(move.to);
 
-        // Ajouter la pièce de promotion
         if (move.flags === 'promotion') {
             notation += '=' + move.promotionPiece.toUpperCase();
         }
 
-        // Ajouter le symbole d'échec ou d'échec et mat
         if (isCheckmate) {
             notation += '#';
         } else if (isCheck) {
@@ -676,10 +614,8 @@ const ChessRules = {
         return notation;
     },
 
-    // Trouver les coups qui pourraient être ambigus dans la notation
     findAmbiguousMoves: function (move) {
         const piece = this.getPieceAt(move.from);
-        const color = this.getPieceColor(piece);
         const ambiguousMoves = [];
 
         for (let i = 0; i < 64; i++) {
@@ -699,22 +635,18 @@ const ChessRules = {
         return ambiguousMoves;
     },
 
-    // Obtenir la pièce à un index spécifique
     getPieceAt: function (index) {
         return this.gameState.position[index];
     },
 
-    // Définir la position à partir d'un état de plateau existant
     setPositionFromState: function (position, activeColor = 'w') {
         this.setupPosition(position);
         this.gameState.activeColor = activeColor;
-
-        // Réinitialiser la cible en passant lors du chargement d'une nouvelle position
         this.gameState.enPassantTarget = null;
     }
 };
 
-// ======= Gestion de l'état du jeu =======
+// ======= Game State Management =======
 const STATE = {
     board: [],
     currentPosition: [],
@@ -731,19 +663,19 @@ const STATE = {
     opponentName: null,
     lastMove: null,
     moveHistory: [],
-    legalMoves: {}, // Stocker les coups légaux pré-calculés pour le joueur actuel
+    legalMoves: {},
     animation: {
         inProgress: false,
         elements: [],
         callback: null
     },
     clock: {
-        white: null,         // Temps du joueur blanc en millisecondes
-        black: null,         // Temps du joueur noir en millisecondes
-        increment: 0,        // Incrément en millisecondes
-        lastMoveTime: null,  // Horodatage du serveur du dernier coup
-        started: false,      // L'horloge a-t-elle commencé ?
-        intervalId: null     // ID de l'intervalle de mise à jour de l'horloge
+        white: null,
+        black: null,
+        increment: 0,
+        lastMoveTime: null,
+        started: false,
+        intervalId: null
     },
     dragAndDrop: {
         isDragging: false,
@@ -751,22 +683,26 @@ const STATE = {
         draggedFromIndex: null,
         draggedElement: null,
         originalPosition: null
+    },
+    // NEW: Move navigation state
+    navigation: {
+        currentMoveIndex: -1, // -1 means we're at the current game position
+        isNavigating: false,
+        positions: [] // Store positions at each move
     }
 };
 
-// Initialiser les horloges basées sur les données du jeu
+// ======= Clock Management =======
 function initClocks(gameData) {
-    console.log('Initialisation des horloges avec les données:', gameData);
+    console.log('Initializing clocks with data:', gameData);
 
-    // Effacer tout intervalle existant
     if (STATE.clock.intervalId) {
         clearInterval(STATE.clock.intervalId);
         STATE.clock.intervalId = null;
     }
 
-    // Vérifier si le jeu a un contrôle du temps
     if (!gameData.time_control || gameData.time_control === 'unlimited') {
-        console.log('Le jeu a un temps illimité');
+        console.log('Game has unlimited time');
         STATE.clock.white = null;
         STATE.clock.black = null;
         STATE.clock.increment = 0;
@@ -776,52 +712,47 @@ function initClocks(gameData) {
         return;
     }
     
-    // Gérer les contrôles de temps basés sur des chaînes (par exemple, 'blitz', 'rapid', 'classical')
     if (typeof gameData.time_control === 'string') {
         const timeControlText = document.getElementById('time-control-text');
         if (timeControlText) {
             timeControlText.textContent = gameData.time_control;
         }
         
-        console.log('Le jeu a un contrôle du temps:', gameData.time_control);
+        console.log('Game has time control:', gameData.time_control);
         
-        // Définir les temps en fonction du type de contrôle du temps
         switch(gameData.time_control) {
             case 'blitz':
-                STATE.clock.white = 5 * 60 * 1000; // 5 minutes
+                STATE.clock.white = 5 * 60 * 1000;
                 STATE.clock.black = 5 * 60 * 1000;
                 break;
             case 'rapid':
-                STATE.clock.white = 10 * 60 * 1000; // 10 minutes
+                STATE.clock.white = 10 * 60 * 1000;
                 STATE.clock.black = 10 * 60 * 1000;
                 break;
             case 'classical':
-                STATE.clock.white = 30 * 60 * 1000; // 30 minutes
+                STATE.clock.white = 30 * 60 * 1000;
                 STATE.clock.black = 30 * 60 * 1000;
                 break;
             default:
-                STATE.clock.white = 10 * 60 * 1000; // Par défaut 10 minutes
+                STATE.clock.white = 10 * 60 * 1000;
                 STATE.clock.black = 10 * 60 * 1000;
         }
         
-        STATE.clock.increment = 0; // Par défaut pas d'incrément pour les contrôles basés sur des chaînes
+        STATE.clock.increment = 0;
     } 
-    // Gérer les contrôles de temps basés sur des objets (avec des propriétés comme initial_time_ms, increment, type)
     else if (typeof gameData.time_control === 'object') {
         const timeControlText = document.getElementById('time-control-text');
         if (timeControlText) {
-            timeControlText.textContent = gameData.time_control.type || 'Personnalisé';
+            timeControlText.textContent = gameData.time_control.type || 'Custom';
         }
         
-        console.log('Le jeu a un contrôle du temps:', gameData.time_control.type);
+        console.log('Game has time control:', gameData.time_control.type);
         
-        // Utiliser initial_time_ms de l'objet time_control pour les deux horloges
         if (gameData.time_control.initial_time_ms !== undefined) {
             STATE.clock.white = gameData.time_control.initial_time_ms;
             STATE.clock.black = gameData.time_control.initial_time_ms;
             STATE.clock.increment = gameData.time_control.increment || 0;
         } else {
-            // Fallback basé sur le type si initial_time_ms n'est pas fourni
             switch(gameData.time_control.type) {
                 case 'blitz':
                     STATE.clock.white = 5 * 60 * 1000;
@@ -842,7 +773,6 @@ function initClocks(gameData) {
         }
     }
     
-    // Si le serveur fournit des valeurs de temps explicites pour chaque joueur, les utiliser à la place
     if (gameData.white_time_ms !== undefined && gameData.white_time_ms !== null) {
         STATE.clock.white = gameData.white_time_ms;
     }
@@ -855,86 +785,32 @@ function initClocks(gameData) {
         STATE.clock.increment = gameData.increment_ms;
     }
 
-    // Définir des propriétés d'horloge supplémentaires
     STATE.clock.lastMoveTime = gameData.last_move_timestamp ? new Date(gameData.last_move_timestamp).getTime() : null;
     STATE.clock.started = gameData.status === 'active';
 
-    // Forcer une synchronisation immédiate avec le serveur pour obtenir les temps les plus précis
     if (STATE.clock.started) {
-        // D'abord mettre à jour l'affichage avec ce que nous avons (pour éviter le scintillement)
         updateClockDisplay('white', STATE.clock.white);
         updateClockDisplay('black', STATE.clock.black);
-        
-        // Puis synchroniser immédiatement avec le serveur
-        syncClockWithServer(true); // Passer true pour indiquer que c'est la synchronisation initiale
+        syncClockWithServer(true);
     } else {
-        // Juste mettre à jour l'affichage pour un jeu qui n'a pas commencé
         updateClockDisplay('white', STATE.clock.white);
         updateClockDisplay('black', STATE.clock.black);
     }
 
-    console.log('Horloges initialisées (v3):', STATE.clock);
+    console.log('Clocks initialized:', STATE.clock);
 }
 
-// Analyser la chaîne de contrôle du temps en temps initial et incrément
-function parseTimeControl(timeControlStr) {
-    // Valeurs par défaut
-    const result = {
-        initial: null,   // Pas de limite de temps par défaut
-        increment: 0     // Pas d'incrément par défaut
-    };
-
-    // Gérer les formats de chaîne simples
-    if (!timeControlStr || timeControlStr === 'unlimited') {
-        return result;
-    }
-
-    if (typeof timeControlStr === 'object') {
-        // Si c'est déjà un objet, l'utiliser directement
-        return {
-            initial: timeControlStr.initial_time_ms || null,
-            increment: timeControlStr.increment_ms || 0
-        };
-    }
-
-    // Sinon analyser le format de chaîne
-    switch (timeControlStr) {
-        case 'blitz':
-            result.initial = 5 * 60 * 1000; // 5 minutes en ms
-            break;
-        case 'rapid':
-            result.initial = 10 * 60 * 1000; // 10 minutes en ms
-            break;
-        case 'classical':
-            result.initial = 30 * 60 * 1000; // 30 minutes en ms
-            break;
-        default:
-            // Essayer d'analyser au format "initial+incrément" (par exemple, "5+2")
-            const match = timeControlStr.match(/^(\d+)(?:\+(\d+))?$/);
-            if (match) {
-                result.initial = parseInt(match[1]) * 60 * 1000; // Minutes en ms
-                if (match[2]) {
-                    result.increment = parseInt(match[2]) * 1000; // Secondes en ms
-                }
-            }
-    }
-
-    return result;
-}
-
-// Commencer l'intervalle d'horloge pour mettre à jour l'horloge du joueur actif
 function startClockInterval() {
     if (STATE.clock.intervalId) {
         clearInterval(STATE.clock.intervalId);
     }
 
-    const updateRate = 100; // Mettre à jour toutes les 100ms pour un affichage plus fluide
+    const updateRate = 100;
     STATE.clock.intervalId = setInterval(() => {
         updateActiveClock();
     }, updateRate);
 }
 
-// Arrêter l'intervalle d'horloge
 function stopClockInterval() {
     if (STATE.clock.intervalId) {
         clearInterval(STATE.clock.intervalId);
@@ -942,39 +818,31 @@ function stopClockInterval() {
     }
 }
 
-// Mettre à jour l'horloge du joueur actif
 function updateActiveClock() {
     if (!STATE.clock.started || STATE.gameStatus !== 'active') {
         stopClockInterval();
         return;
     }
 
-    // Déterminer à qui c'est le tour
     const activeColor = ChessRules.gameState.activeColor === 'w' ? 'white' : 'black';
 
-    // Mettre à jour l'horloge active
     if (STATE.clock[activeColor] !== null) {
-        // Décrémenter le temps
-        STATE.clock[activeColor] -= 100; // Soustraire 100ms
+        STATE.clock[activeColor] -= 100;
 
-        // Vérifier le dépassement de temps
         if (STATE.clock[activeColor] <= 0) {
             STATE.clock[activeColor] = 0;
             handleTimeout(activeColor);
         }
 
-        // Mettre à jour l'affichage
         updateClockDisplay(activeColor, STATE.clock[activeColor]);
     }
 }
 
-// Gérer un joueur qui dépasse le temps
 function handleTimeout(color) {
-    console.log(`Le joueur ${color} a manqué de temps`);
+    console.log(`${color} player ran out of time`);
     stopClockInterval();
     STATE.clock.started = false;
 
-    // Émettre un événement au serveur pour gérer le dépassement de temps
     if (STATE.socket) {
         STATE.socket.emit('time_out', {
             game_id: STATE.gameId,
@@ -983,7 +851,6 @@ function handleTimeout(color) {
         });
     }
 
-    // Gérer les changements d'interface utilisateur pour le dépassement de temps
     const winner = color === 'white' ? 'black' : 'white';
     showGameResult({
         result: 'timeout',
@@ -991,7 +858,6 @@ function handleTimeout(color) {
     });
 }
 
-// Mettre à jour l'affichage de l'horloge pour un joueur
 function updateClockDisplay(color, timeMs) {
     const displayId = color === 'white' ?
         (STATE.userColor === 'white' ? 'player-clock' : 'opponent-clock') :
@@ -1005,25 +871,20 @@ function updateClockDisplay(color, timeMs) {
         return;
     }
 
-    // Formater le temps
     const formattedTime = formatClockTime(timeMs);
     clockElement.textContent = formattedTime;
 
-    // Ajouter des indicateurs visuels
     clockElement.classList.remove('clock-active', 'clock-low');
 
-    // Vérifier si c'est l'horloge active
     if (STATE.clock.started && ChessRules.gameState.activeColor === (color === 'white' ? 'w' : 'b')) {
         clockElement.classList.add('clock-active');
     }
 
-    // Vérifier si le temps s'épuise (moins de 30 secondes)
     if (timeMs < 30000) {
         clockElement.classList.add('clock-low');
     }
 }
 
-// Formater les millisecondes en chaîne d'affichage d'horloge
 function formatClockTime(ms) {
     if (ms < 0) ms = 0;
 
@@ -1031,7 +892,6 @@ function formatClockTime(ms) {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
 
-    // Pour les temps inférieurs à 10 secondes, afficher les décisecondes
     if (totalSeconds < 10) {
         const deciseconds = Math.floor((ms % 1000) / 100);
         return `${minutes}:${seconds.toString().padStart(2, '0')}.${deciseconds}`;
@@ -1041,11 +901,8 @@ function formatClockTime(ms) {
 }
 
 function setupClockSync() {
-    // Faire une synchronisation immédiate
     syncClockWithServer();
 
-    // Puis configurer un intervalle pour synchroniser toutes les 10 secondes
-    // Cela aide à prévenir la dérive entre les horloges client et serveur
     setInterval(() => {
         if (STATE.gameStatus === 'active' && STATE.clock.started) {
             syncClockWithServer();
@@ -1053,13 +910,11 @@ function setupClockSync() {
     }, 10000);
 }
 
-// Synchroniser l'horloge avec le serveur
 function syncClockWithServer(isInitialSync = false) {
     if (!STATE.socket || !STATE.gameId) return;
 
-    console.log('Synchronisation de l\'horloge avec le serveur...');
+    console.log('Syncing clock with server...');
 
-    // Stocker l'heure de la demande de synchronisation
     const syncRequestTime = Date.now();
 
     STATE.socket.emit('get_remaining_time', {
@@ -1067,17 +922,13 @@ function syncClockWithServer(isInitialSync = false) {
         token: localStorage.getItem('token')
     });
 
-    // Si c'est la synchronisation initiale, nous configurerons un écouteur unique pour la réponse
     if (isInitialSync) {
-        // Utiliser once() pour s'assurer que cela ne se produit qu'une seule fois
         STATE.socket.once('clock_update', (data) => {
-            console.log('Synchronisation d\'horloge initiale reçue:', data);
+            console.log('Initial clock sync received:', data);
 
-            // Calculer la latence réseau (très simplifiée)
             const latency = Math.floor((Date.now() - syncRequestTime) / 2);
-            console.log('Latence unidirectionnelle estimée:', latency, 'ms');
+            console.log('Estimated one-way latency:', latency, 'ms');
 
-            // Mettre à jour l'état de l'horloge avec les valeurs du serveur
             if (data.white_time_ms !== undefined) {
                 STATE.clock.white = data.white_time_ms;
             }
@@ -1091,11 +942,9 @@ function syncClockWithServer(isInitialSync = false) {
                 STATE.clock.lastMoveTime = new Date(data.last_move_timestamp).getTime();
             }
 
-            // Mettre à jour les affichages
             updateClockDisplay('white', STATE.clock.white);
             updateClockDisplay('black', STATE.clock.black);
 
-            // Commencer l'intervalle d'horloge si le jeu est actif
             if (STATE.clock.started && STATE.gameStatus === 'active' &&
                 STATE.clock.white !== null && STATE.clock.black !== null) {
                 startClockInterval();
@@ -1104,68 +953,55 @@ function syncClockWithServer(isInitialSync = false) {
     }
 }
 
-// Gérer un coup fait - changer l'horloge
 function handleClockAfterMove(color) {
     if (STATE.clock.white === null || STATE.clock.black === null) {
-        return; // Pas de contrôle du temps
+        return;
     }
 
-    // Obtenir la couleur qui vient de jouer
     const movingColor = color ||
         (ChessRules.gameState.activeColor === 'w' ? 'black' : 'white');
 
-    // Ajouter l'incrément au joueur qui vient de jouer
     if (STATE.clock.increment > 0) {
         STATE.clock[movingColor] += STATE.clock.increment;
     }
 
-    // S'assurer que les horloges sont démarrées après le premier coup
     if (!STATE.clock.started && STATE.gameStatus === 'active') {
         STATE.clock.started = true;
         startClockInterval();
     }
 
-    // Mettre à jour les deux affichages
     updateClockDisplay('white', STATE.clock.white);
     updateClockDisplay('black', STATE.clock.black);
 }
 
-// ======= Fonctions utilitaires =======
-
-// Convertir file (0-7) et rank (0-7) en notation algébrique (a1, h8, etc.)
+// ======= Utility Functions =======
 function fileRankToPosition(file, rank) {
     const fileChar = String.fromCharCode(97 + file);
     const rankChar = 8 - rank;
     return fileChar + rankChar;
 }
 
-// Convertir la notation algébrique en file et rank
 function positionToFileRank(position) {
     const file = position.charCodeAt(0) - 97;
     const rank = 8 - parseInt(position[1]);
     return { file, rank };
 }
 
-// Convertir l'index de position en notation algébrique
 function indexToAlgebraic(index) {
     const file = index % 8;
     const rank = Math.floor(index / 8);
     return fileRankToPosition(file, rank);
 }
 
-// Convertir la notation algébrique en index de position
 function algebraicToIndex(algebraic) {
     const { file, rank } = positionToFileRank(algebraic);
     return rank * 8 + file;
 }
 
-// Obtenir l'élément case pour un index d'échiquier donné
 function getSquareElement(index) {
-    // Convertir l'index interne en file et rank
     const file = index % 8;
     const rank = Math.floor(index / 8);
 
-    // Convertir en notation algébrique, en tenant compte de l'orientation de l'échiquier
     let position;
     if (STATE.flipped) {
         position = fileRankToPosition(7 - file, 7 - rank);
@@ -1173,16 +1009,13 @@ function getSquareElement(index) {
         position = fileRankToPosition(file, rank);
     }
 
-    // Obtenir l'élément case
     return document.querySelector(`.square[data-position="${position}"]`);
 }
 
-// Convertir un objet coup en notation UCI
 function moveToUci(move) {
     const from = indexToAlgebraic(move.from);
     const to = indexToAlgebraic(move.to);
 
-    // Gérer la promotion
     if (move.flags === 'promotion' && move.promotionPiece) {
         return `${from}${to}${move.promotionPiece}`;
     }
@@ -1190,10 +1023,9 @@ function moveToUci(move) {
     return `${from}${to}`;
 }
 
-// Convertir la notation UCI en objet coup
 function uciToMove(uci) {
     if (typeof uci !== 'string' || uci.length < 4) {
-        console.error('Notation UCI invalide:', uci);
+        console.error('Invalid UCI notation:', uci);
         return null;
     }
 
@@ -1203,19 +1035,16 @@ function uciToMove(uci) {
     let flags = null;
     let promotionPiece = null;
 
-    // Vérifier la promotion
     if (uci.length === 5) {
         flags = 'promotion';
         promotionPiece = uci[4];
     }
-    // Vérifier la prise en passant
     else if (ChessRules.gameState.position[from] &&
              ChessRules.gameState.position[from].toLowerCase() === 'p' &&
              Math.abs(from % 8 - to % 8) === 1 &&
              ChessRules.gameState.position[to] === '') {
         flags = 'en_passant';
     }
-    // Vérifier le roque
     else if (ChessRules.gameState.position[from] &&
              ChessRules.gameState.position[from].toLowerCase() === 'k' &&
              Math.abs(from - to) > 1) {
@@ -1225,7 +1054,6 @@ function uciToMove(uci) {
     return { from, to, flags, promotionPiece };
 }
 
-// Vérifier si c'est le tour du joueur actuel
 function isPlayersTurn() {
     const userColor = document.getElementById('user-color').value;
     const fen = ChessRules.generateFEN();
@@ -1234,9 +1062,7 @@ function isPlayersTurn() {
     return (userColor === 'white' && isWhiteTurn) || (userColor === 'black' && !isWhiteTurn);
 }
 
-// ======= Fonctions de manipulation du DOM =======
-
-// Initialiser les éléments de l'échiquier
+// ======= DOM Manipulation Functions =======
 function initBoard() {
     const board = document.getElementById('board');
     board.innerHTML = '';
@@ -1252,7 +1078,6 @@ function initBoard() {
 
             square.addEventListener('click', () => handleSquareClick(position));
             
-            // Ajouter les événements de drag and drop
             square.addEventListener('dragover', handleDragOver);
             square.addEventListener('drop', handleDrop);
             square.addEventListener('dragenter', handleDragEnter);
@@ -1265,7 +1090,6 @@ function initBoard() {
     setupStartingPosition();
 }
 
-// Configurer la position de départ
 function setupStartingPosition() {
     STATE.currentPosition = [
         'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
@@ -1278,36 +1102,32 @@ function setupStartingPosition() {
         'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'
     ];
 
-    // Initialiser le moteur de règles d'échecs
     ChessRules.setupPosition(STATE.currentPosition);
+    
+    // NEW: Initialize navigation state
+    STATE.navigation.positions = [STATE.currentPosition.slice()];
+    STATE.navigation.currentMoveIndex = -1;
+    STATE.navigation.isNavigating = false;
 
-    // Pré-calculer les coups légaux pour la position de départ
     precomputeLegalMoves();
-
     updateBoard();
     updateGameStateUI();
 }
 
-// Mettre à jour l'échiquier visuel basé sur la position actuelle
 function updateBoard() {
     const squares = document.querySelectorAll('.square');
 
-    // Effacer toutes les cases d'abord
     squares.forEach(square => {
-        // Supprimer toutes les pièces existantes
         const img = square.querySelector('img');
         if (img) {
             square.removeChild(img);
         }
     });
 
-    // Maintenant ajouter les pièces basées sur la position actuelle
     squares.forEach(square => {
-        // Obtenir la position de la case (comme "a1", "e4", etc.)
         const position = square.dataset.position;
         const {file, rank} = positionToFileRank(position);
 
-        // Ajuster pour l'orientation de l'échiquier
         const adjustedIndex = STATE.flipped
             ? (7 - rank) * 8 + (7 - file)
             : rank * 8 + file;
@@ -1325,7 +1145,6 @@ function updateBoard() {
             img.dataset.piece = piece;
             img.dataset.index = adjustedIndex;
             
-            // Ajouter les événements de drag
             img.addEventListener('dragstart', handleDragStart);
             img.addEventListener('dragend', handleDragEnd);
             
@@ -1333,24 +1152,136 @@ function updateBoard() {
         }
     });
 
-    // Synchroniser le moteur de règles avec la position actuelle
     ChessRules.setPositionFromState(STATE.currentPosition,
         STATE.gameStatus === 'active' ? ChessRules.gameState.activeColor : 'w');
 
-    // Pré-calculer les coups légaux pour la position actuelle
     precomputeLegalMoves();
-
-    // Mettre à jour l'affichage de l'état du jeu
     updateGameStateUI();
 
-    console.log('Échiquier mis à jour avec la position:', [...STATE.currentPosition]);
+    console.log('Board updated with position:', [...STATE.currentPosition]);
 }
 
-// ======= Fonctions Drag and Drop =======
+// ======= Move Navigation Functions =======
+function navigateToMove(moveIndex) {
+    // If we're navigating to the current position, exit navigation mode
+    if (moveIndex === -1 || moveIndex >= STATE.moveHistory.length) {
+        STATE.navigation.isNavigating = false;
+        STATE.navigation.currentMoveIndex = -1;
+        
+        // Restore the current game position
+        loadFEN(ChessRules.generateFEN());
+        
+        // Update move list highlighting
+        updateMoveListHighlighting(-1);
+        
+        // Show/hide result panel based on game status
+        if (STATE.gameStatus === 'completed') {
+            document.getElementById('game-result').style.display = 'block';
+        }
+        
+        return;
+    }
+    
+    // Enter navigation mode
+    STATE.navigation.isNavigating = true;
+    STATE.navigation.currentMoveIndex = moveIndex;
+    
+    // Hide result panel during navigation
+    document.getElementById('game-result').style.display = 'none';
+    
+    // Get the position at this move
+    if (moveIndex < STATE.navigation.positions.length) {
+        STATE.currentPosition = STATE.navigation.positions[moveIndex + 1].slice();
+        
+        // Calculate the active color at this position
+        const activeColor = (moveIndex % 2 === 0) ? 'b' : 'w';
+        ChessRules.setPositionFromState(STATE.currentPosition, activeColor);
+        
+        updateBoard();
+        updateMoveListHighlighting(moveIndex);
+    }
+}
 
+function navigateForward() {
+    if (STATE.navigation.currentMoveIndex < STATE.moveHistory.length - 1) {
+        navigateToMove(STATE.navigation.currentMoveIndex + 1);
+    } else {
+        // Go to current position
+        navigateToMove(-1);
+    }
+}
+
+function navigateBackward() {
+    if (STATE.navigation.currentMoveIndex > 0) {
+        navigateToMove(STATE.navigation.currentMoveIndex - 1);
+    } else if (STATE.navigation.currentMoveIndex === 0) {
+        // Go to starting position
+        navigateToStartingPosition();
+    } else {
+        // We're at current position, go to last move
+        if (STATE.moveHistory.length > 0) {
+            navigateToMove(STATE.moveHistory.length - 1);
+        }
+    }
+}
+
+function navigateToStartingPosition() {
+    STATE.navigation.isNavigating = true;
+    STATE.navigation.currentMoveIndex = -2; // Special value for starting position
+    
+    // Hide result panel
+    document.getElementById('game-result').style.display = 'none';
+    
+    // Load starting position
+    setupStartingPosition();
+    updateMoveListHighlighting(-2);
+}
+
+function updateMoveListHighlighting(currentMoveIndex) {
+    // Remove all highlighting
+    document.querySelectorAll('.move').forEach(move => {
+        move.classList.remove('active-move');
+    });
+    
+    // Highlight current move if we're navigating
+    if (currentMoveIndex >= 0) {
+        const moves = document.querySelectorAll('.move');
+        if (moves[currentMoveIndex]) {
+            moves[currentMoveIndex].classList.add('active-move');
+            moves[currentMoveIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+}
+
+function exitNavigation() {
+    STATE.navigation.isNavigating = false;
+    STATE.navigation.currentMoveIndex = -1;
+    
+    // Restore current game position
+    if (STATE.moveHistory.length > 0) {
+        // Replay all moves to get to current position
+        setupStartingPosition();
+        for (const move of STATE.moveHistory) {
+            const moveObj = uciToMove(move.uci);
+            if (moveObj) {
+                ChessRules.makeMove(moveObj);
+            }
+        }
+        STATE.currentPosition = ChessRules.gameState.position.slice();
+    }
+    
+    updateBoard();
+    updateMoveListHighlighting(-1);
+    
+    // Show result panel if game is completed
+    if (STATE.gameStatus === 'completed') {
+        document.getElementById('game-result').style.display = 'block';
+    }
+}
+
+// ======= Drag and Drop Functions =======
 function handleDragStart(e) {
-    // Vérifier si le jeu est actif et si c'est le tour du joueur
-    if (STATE.gameStatus !== 'active' || !isPlayersTurn()) {
+    if (STATE.gameStatus !== 'active' || !isPlayersTurn() || STATE.navigation.isNavigating) {
         e.preventDefault();
         return;
     }
@@ -1359,7 +1290,6 @@ function handleDragStart(e) {
     const piece = img.dataset.piece;
     const index = parseInt(img.dataset.index);
     
-    // Vérifier si c'est une pièce du joueur actuel
     const isCurrentPlayerPiece = piece && 
         ChessRules.getPieceColor(piece) === ChessRules.gameState.activeColor;
     
@@ -1368,7 +1298,6 @@ function handleDragStart(e) {
         return;
     }
     
-    // Configurer l'état de drag
     STATE.dragAndDrop.isDragging = true;
     STATE.dragAndDrop.draggedPiece = piece;
     STATE.dragAndDrop.draggedFromIndex = index;
@@ -1378,32 +1307,25 @@ function handleDragStart(e) {
         nextSibling: img.nextSibling
     };
     
-    // Effacer toute sélection existante
     clearPossibleMoves();
     STATE.selectedSquare = null;
     
-    // Montrer les coups possibles pour la pièce glissée
     showPossibleMoves(index);
     
-    // Configurer les données de transfert
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', '');
     
-    // Ajouter une classe visuelle
     img.classList.add('dragging');
     
-    console.log('Démarrage du glissement pour la pièce:', piece, 'depuis l\'index:', index);
+    console.log('Started dragging piece:', piece, 'from index:', index);
 }
 
 function handleDragEnd(e) {
-    // Nettoyer l'état de drag
     const img = e.target;
     img.classList.remove('dragging');
     
-    // Effacer les indicateurs de coups possibles
     clearPossibleMoves();
     
-    // Si le glissement était annulé, remettre la pièce à sa position d'origine
     if (STATE.dragAndDrop.isDragging) {
         const originalPos = STATE.dragAndDrop.originalPosition;
         if (originalPos && originalPos.parent) {
@@ -1415,7 +1337,6 @@ function handleDragEnd(e) {
         }
     }
     
-    // Réinitialiser l'état de drag
     STATE.dragAndDrop = {
         isDragging: false,
         draggedPiece: null,
@@ -1439,25 +1360,21 @@ function handleDragEnter(e) {
     const position = square.dataset.position;
     const {file, rank} = positionToFileRank(position);
     
-    // Ajuster pour l'orientation de l'échiquier
     const toIndex = STATE.flipped
         ? (7 - rank) * 8 + (7 - file)
         : rank * 8 + file;
     
-    // Vérifier si c'est un coup légal
     const legalMoves = STATE.legalMoves[STATE.dragAndDrop.draggedFromIndex] || [];
     const isLegalMove = legalMoves.some(move => move.to === toIndex);
     
     if (isLegalMove) {
         square.classList.add('drag-over-valid');
     }
-    // SUPPRIMÉ: Plus de feedback pour cases illégales
 }
 
 function handleDragLeave(e) {
     const square = e.currentTarget;
     square.classList.remove('drag-over-valid');
-    // SUPPRIMÉ: drag-over-invalid
 }
 
 function handleDrop(e) {
@@ -1466,66 +1383,51 @@ function handleDrop(e) {
     if (!STATE.dragAndDrop.isDragging) return;
     
     const square = e.currentTarget;
-    square.classList.remove('drag-over-valid'); // SUPPRIMÉ: drag-over-invalid
+    square.classList.remove('drag-over-valid');
     
     const position = square.dataset.position;
     const {file, rank} = positionToFileRank(position);
     
-    // Ajuster pour l'orientation de l'échiquier
     const toIndex = STATE.flipped
         ? (7 - rank) * 8 + (7 - file)
         : rank * 8 + file;
     
     const fromIndex = STATE.dragAndDrop.draggedFromIndex;
     
-    // Vérifier si c'est un coup légal
     const legalMoves = STATE.legalMoves[fromIndex] || [];
     const legalMove = legalMoves.find(move => move.to === toIndex);
     
     if (legalMove) {
-        // Coup légal - l'exécuter SANS animation pour le drag & drop
-        const result = executeLocalMove(legalMove, false); // false = pas d'animation
+        const result = executeLocalMove(legalMove, false);
         
         if (result.success) {
-            // Mettre à jour immédiatement l'échiquier sans animation
             updateBoard();
-            
-            // Envoyer le coup au serveur
             const uciMove = moveToUci(legalMove);
             sendMoveToServer(uciMove);
         }
         
-        // Marquer que le glissement a réussi
         STATE.dragAndDrop.isDragging = false;
     } else {
-        // Coup illégal - la pièce retournera à sa position d'origine dans handleDragEnd
-        console.log('Coup illégal tenté via drag & drop');
+        console.log('Illegal move attempted via drag & drop');
     }
 }
 
-// Mettre à jour l'interface utilisateur basée sur l'état actuel du jeu
+// ======= Game State UI Updates =======
 function updateGameStateUI() {
-    // Vérifier l'échec, l'échec et mat, le pat
     const gameState = ChessRules.checkGameState();
 
-    // Effacer tous les indicateurs existants
     document.querySelectorAll('.check-indicator').forEach(el => el.remove());
 
-    // Gérer les fins de partie
     if (gameState === 'checkmate') {
-        const winner = ChessRules.gameState.activeColor === 'w' ? 'Noirs' : 'Blancs';
-        // Montrer l'interface utilisateur de résultat du jeu
+        const winner = ChessRules.gameState.activeColor === 'w' ? 'Blacks' : 'Whites';
         showGameResult(winner.toLowerCase() === STATE.userColor ? 'win' : 'loss');
     } else if (gameState === 'stalemate' || gameState === 'draw_fifty_move') {
-        // Montrer l'interface utilisateur de résultat du jeu
         showGameResult('draw');
     } else if (gameState === 'check') {
-        // Marquer le roi qui est en échec (indication visuelle sur l'échiquier)
         const kingPos = ChessRules.gameState.kingPositions[ChessRules.gameState.activeColor];
         highlightKingInCheck(kingPos);
     }
 
-    // Pré-calculer les coups légaux pour la position actuelle
     precomputeLegalMoves();
 }
 
@@ -1534,166 +1436,146 @@ function showGameResult(result) {
     const resultMessage = document.getElementById('result-message');
 
     if (!gameResult || !resultMessage) {
-        console.error('Éléments de résultat du jeu non trouvés');
+        console.error('Game result elements not found');
         return;
     }
 
-    console.log('Affichage du résultat du jeu:', result);
+    console.log('Showing game result:', result);
 
-    // Déterminer le type de résultat et le message
     let message = '';
     let cause = '';
     let resultClass = '';
 
-    // Vérifier si l'utilisateur actuel est le gagnant
     const isWinner = result.winner === STATE.userId;
     const isLoser = result.loser === STATE.userId;
     const isDraw = result.result === 'draw' || result.winner === 'draw';
 
-    // Gérer différents types de résultats
     if (isDraw) {
-        message = 'Nulle';
+        message = 'Draw';
         resultClass = 'draw';
         
         if (result.result_type) {
             switch(result.result_type) {
                 case 'agreement':
-                    cause = 'Par accord';
+                    cause = 'By agreement';
                     break;
                 case 'stalemate':
-                    cause = 'Par pat';
+                    cause = 'By stalemate';
                     break;
                 case 'fifty_move':
-                    cause = 'Par la règle des cinquante coups';
+                    cause = 'By fifty-move rule';
                     break;
                 case 'insufficient':
-                    cause = 'Par matériel insuffisant';
+                    cause = 'By insufficient material';
                     break;
                 default:
-                    cause = 'Par ' + result.result_type;
+                    cause = 'By ' + result.result_type;
             }
         } else {
-            cause = 'Par accord';
+            cause = 'By agreement';
         }
     } 
     else if (result.result === 'timeout') {
         if (isLoser) {
-            message = 'Vous avez perdu';
+            message = 'You lost';
             resultClass = 'loss';
-            cause = 'Au temps';
+            cause = 'On time';
         } else {
-            message = 'Vous avez gagné';
+            message = 'You won';
             resultClass = 'win';
-            cause = 'L\'adversaire a manqué de temps';
+            cause = 'Opponent ran out of time';
         }
     }
     else if (result.result === 'resigned' || result.result === 'resignation') {
         if (isLoser) {
-            message = 'Vous avez perdu';
+            message = 'You lost';
             resultClass = 'loss';
-            cause = 'Par abandon';
+            cause = 'By resignation';
         } else {
-            message = 'Vous avez gagné';
+            message = 'You won';
             resultClass = 'win';
-            cause = 'L\'adversaire a abandonné';
+            cause = 'Opponent resigned';
         }
     }
     else if (isWinner) {
-        message = 'Vous avez gagné';
+        message = 'You won';
         resultClass = 'win';
-        cause = result.result_type ? 'Par ' + result.result_type : 'Par échec et mat';
+        cause = result.result_type ? 'By ' + result.result_type : 'By checkmate';
     } 
     else {
-        message = 'Vous avez perdu';
+        message = 'You lost';
         resultClass = 'loss';
-        cause = result.result_type ? 'Par ' + result.result_type : 'Par échec et mat';
+        cause = result.result_type ? 'By ' + result.result_type : 'By checkmate';
     }
 
-    // Définir le contenu du message
     resultMessage.innerHTML = `
         <div class="result-header">${message}</div>
         <div class="result-cause">${cause}</div>
     `;
     
-    // Animation fluide : Réinitialiser les classes et configurer pour l'animation
-    gameResult.className = 'game-result-panel'; // Effacer toutes les classes
-    gameResult.style.display = 'block'; // Rendre visible mais toujours caché via CSS
+    gameResult.className = 'game-result-panel';
+    gameResult.style.display = 'block';
     
-    // Forcer le reflow : S'assurer que l'état initial est appliqué
     gameResult.offsetHeight;
     
-    // Déclencher l'animation : Ajouter des classes pour démarrer la transition fluide
     gameResult.classList.add('show', resultClass);
 
-    // Désactiver l'interaction du jeu
     disableGameInteraction();
 
-    // Montrer une notification
     showNotification(`${message} - ${cause}`, resultClass === 'win' ? 'success' :
         (resultClass === 'loss' ? 'error' : 'info'));
 
-    // Défilement fluide : Faire défiler le résultat en vue en douceur
     setTimeout(() => {
         gameResult.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center'
         });
-    }, 100); // Petit délai pour laisser l'animation commencer
+    }, 100);
 }
 
-// Cacher le résultat du jeu avec animation
 function hideGameResult() {
     const gameResult = document.getElementById('game-result');
     if (!gameResult) return;
     
-    // Supprimer la classe show et ajouter la classe hide
     gameResult.classList.remove('show');
     gameResult.classList.add('hide');
     
-    // Après la fin de l'animation, cacher complètement
     setTimeout(() => {
         gameResult.style.display = 'none';
         gameResult.classList.remove('hide');
-    }, 300); // Correspondre à la durée de transition CSS
+    }, 300);
 }
 
-// Mettre à jour le panneau de résultat pour charger des jeux existants
 function showGameResultForExistingGame(gameData) {
     if (gameData.status !== 'completed') return;
     
-    // Déterminer le résultat basé sur les données du jeu
     const result = {
         game_id: gameData.game_id,
         winner: gameData.winner,
         result_type: gameData.result_type || 'checkmate'
     };
     
-    // Petit délai pour s'assurer que l'échiquier est chargé en premier
     setTimeout(() => {
         showGameResult(result);
-    }, 500); // Donner le temps à l'échiquier de se rendre
+    }, 500);
 }
 
 function disableGameInteraction() {
-    // Supprimer les gestionnaires de clic des cases
     document.querySelectorAll('.square').forEach(square => {
         const newSquare = square.cloneNode(true);
         square.parentNode.replaceChild(newSquare, square);
     });
 
-    // Désactiver les boutons d'action du jeu
     const drawBtn = document.getElementById('draw-btn');
     const resignBtn = document.getElementById('resign-btn')
     if (resignBtn) resignBtn.disabled = true;
     if (drawBtn) drawBtn.disabled = true;
 }
 
-// Mettre en évidence le roi qui est en échec
 function highlightKingInCheck(kingPos) {
     const kingRank = Math.floor(kingPos / 8);
     const kingFile = kingPos % 8;
 
-    // Convertir en position visuelle (en ajustant pour le retournement de l'échiquier)
     const visualPos = STATE.flipped
         ? fileRankToPosition(7 - kingFile, 7 - kingRank)
         : fileRankToPosition(kingFile, kingRank);
@@ -1706,21 +1588,16 @@ function highlightKingInCheck(kingPos) {
     }
 }
 
-// Pré-calculer les coups légaux pour le joueur actuel
 function precomputeLegalMoves() {
-    STATE.legalMoves = {}; // Réinitialiser le cache des coups légaux
+    STATE.legalMoves = {};
 
-    // Calculer les coups légaux seulement si c'est le tour du joueur
-    if (!isPlayersTurn()) return;
+    if (!isPlayersTurn() || STATE.navigation.isNavigating) return;
 
     const color = ChessRules.gameState.activeColor;
 
-    // Parcourir toutes les cases
     for (let i = 0; i < 64; i++) {
         const piece = STATE.currentPosition[i];
-        // Si la case a une pièce de la couleur du joueur actuel
         if (piece && ChessRules.getPieceColor(piece) === color) {
-            // Calculer les coups légaux pour cette pièce
             const moves = ChessRules.generatePieceMoves(STATE.currentPosition, i, true);
             if (moves.length > 0) {
                 STATE.legalMoves[i] = moves;
@@ -1729,16 +1606,12 @@ function precomputeLegalMoves() {
     }
 }
 
-// Afficher les coups possibles pour une pièce sélectionnée
 function showPossibleMoves(index) {
-    // Effacer tous les indicateurs existants
     clearPossibleMoves();
 
-    // Obtenir les coups légaux pour la pièce sélectionnée à partir du cache pré-calculé
     const legalMoves = STATE.legalMoves[index] || [];
 
     for (const move of legalMoves) {
-        // Convertir en position visuelle (en ajustant pour le retournement de l'échiquier)
         const toRank = Math.floor(move.to / 8);
         const toFile = move.to % 8;
         const visualPos = STATE.flipped
@@ -1748,17 +1621,13 @@ function showPossibleMoves(index) {
         const targetSquare = document.querySelector(`.square[data-position="${visualPos}"]`);
         if (!targetSquare) continue;
 
-        // Vérifier si c'est une capture en passant
         const isEnPassant = move.flags === 'en_passant';
 
-        // Créer l'indicateur approprié basé sur le type de coup
         if (STATE.currentPosition[move.to] !== '' || isEnPassant) {
-            // Coup de capture - y compris la prise en passant
             const captureIndicator = document.createElement('div');
             captureIndicator.className = 'possible-capture';
             targetSquare.appendChild(captureIndicator);
         } else {
-            // Coup normal
             const moveIndicator = document.createElement('div');
             moveIndicator.className = 'possible-move';
             targetSquare.appendChild(moveIndicator);
@@ -1766,14 +1635,10 @@ function showPossibleMoves(index) {
     }
 }
 
-// Effacer tous les indicateurs de coups possibles
 function clearPossibleMoves() {
     document.querySelectorAll('.possible-move, .possible-capture').forEach(el => el.remove());
 }
 
-// SUPPRIMÉ: highlightSquare et clearHighlights - Plus de coloration de pièce cliquée
-
-// Mettre à jour l'affichage de la liste des coups
 function updateMovesList() {
     const movesList = document.getElementById('moves-list');
     if (!movesList) return;
@@ -1781,7 +1646,7 @@ function updateMovesList() {
     movesList.innerHTML = '';
 
     if (STATE.moveHistory.length === 0) {
-        movesList.innerHTML = '<p>Aucun coup joué pour le moment.</p>';
+        movesList.innerHTML = '<p>No moves played yet.</p>';
         return;
     }
 
@@ -1792,12 +1657,12 @@ function updateMovesList() {
         moveHtml += `<div class="move-row">`;
         moveHtml += `<span class="move-number">${moveNumber}.</span>`;
 
-        // Coup des blancs
-        moveHtml += `<span class="move">${STATE.moveHistory[i].notation}</span>`;
+        // White's move
+        moveHtml += `<span class="move" data-move-index="${i}">${STATE.moveHistory[i].notation}</span>`;
 
-        // Coup des noirs (s'il existe)
+        // Black's move (if exists)
         if (i + 1 < STATE.moveHistory.length) {
-            moveHtml += `<span class="move">${STATE.moveHistory[i + 1].notation}</span>`;
+            moveHtml += `<span class="move" data-move-index="${i + 1}">${STATE.moveHistory[i + 1].notation}</span>`;
         } else {
             moveHtml += `<span class="move-placeholder"></span>`;
         }
@@ -1808,22 +1673,25 @@ function updateMovesList() {
 
     movesList.innerHTML = moveHtml;
 
-    // Faire défiler vers le bas
+    // Add click listeners to moves
+    movesList.querySelectorAll('.move').forEach(moveElement => {
+        moveElement.addEventListener('click', () => {
+            const moveIndex = parseInt(moveElement.dataset.moveIndex);
+            navigateToMove(moveIndex);
+        });
+    });
+
     movesList.scrollTop = movesList.scrollHeight;
 }
 
-// Montrer le dialogue de promotion quand un pion atteint la dernière rangée
 function showPromotionDialog(move, callback) {
     const promotionOverlay = document.getElementById('promotion-overlay');
     const promotionPieces = document.getElementById('promotion-pieces');
 
-    // Effacer les pièces précédentes
     promotionPieces.innerHTML = '';
 
-    // Obtenir la couleur du joueur
     const color = STATE.userColor === 'white' ? 'w' : 'b';
 
-    // Ajouter les pièces de promotion (dame, tour, fou, cavalier)
     const pieces = ['q', 'r', 'b', 'n'];
 
     pieces.forEach(pieceType => {
@@ -1843,23 +1711,19 @@ function showPromotionDialog(move, callback) {
         promotionPieces.appendChild(pieceElement);
     });
 
-    // Montrer le dialogue de promotion
     promotionOverlay.style.display = 'flex';
 }
 
-// Fonctions d'animation
+// ======= Animation Functions =======
 function animatePieceMove(fromSquare, toSquare, piece, duration = 200, callback = null, isCastling = false, rookData = null) {
-    // D'abord, terminer toute animation qui pourrait être en cours
     if (STATE.animation.inProgress) {
         finishCurrentAnimation();
     }
 
-    // Définir l'état d'animation
     STATE.animation.inProgress = true;
     STATE.animation.elements = [];
     STATE.animation.callback = callback;
 
-    // Créer l'élément de pièce animée
     const animatedPiece = document.createElement('img');
     const color = piece.toUpperCase() === piece ? 'w' : 'b';
     const pieceChar = piece.toLowerCase();
@@ -1868,104 +1732,79 @@ function animatePieceMove(fromSquare, toSquare, piece, duration = 200, callback 
     animatedPiece.src = `/static/images/${pieceName}-${color}.svg`;
     animatedPiece.className = 'piece';
 
-    // Ajouter à la liste des éléments d'animation pour le nettoyage
     STATE.animation.elements.push(animatedPiece);
 
-    // Calculs de position - obtenir les coordonnées d'écran réelles
     const fromRect = fromSquare.getBoundingClientRect();
     const toRect = toSquare.getBoundingClientRect();
     const boardContainer = document.querySelector('.board-container');
     const boardRect = boardContainer.getBoundingClientRect();
 
-    // Calculs de taille
     const squareSize = fromRect.width;
     const pieceSize = Math.round(squareSize * 0.95);
     animatedPiece.style.width = `${pieceSize}px`;
     animatedPiece.style.height = `${pieceSize}px`;
 
-    // Ajouter au DOM
     boardContainer.appendChild(animatedPiece);
 
-    // Calculer le décalage de centrage
     const offsetX = (squareSize - pieceSize) / 2;
 
-    // Définir la position initiale basée sur fromRect visuel
     animatedPiece.style.left = `${fromRect.left - boardRect.left + offsetX}px`;
     animatedPiece.style.top = `${fromRect.top - boardRect.top + offsetX}px`;
 
-    // Cacher l'image originale pendant l'animation
     const originalImg = fromSquare.querySelector('img');
     if (originalImg) {
-        // Définir explicitement l'opacité à 0 en plus d'ajouter la classe
         originalImg.style.opacity = '0';
         originalImg.classList.add('animating');
     }
 
-    // Pour le roque, nous devons animer à la fois le roi et la tour
     if (isCastling && rookData) {
         const { rookFromSquare, rookToSquare, rookPiece } = rookData;
 
-        // Créer l'élément d'animation de la tour
         const animatedRook = document.createElement('img');
         const rookColor = rookPiece.toUpperCase() === rookPiece ? 'w' : 'b';
         animatedRook.src = `/static/images/rook-${rookColor}.svg`;
         animatedRook.className = 'piece';
 
-        // Ajouter à la liste des éléments d'animation pour le nettoyage
         STATE.animation.elements.push(animatedRook);
 
-        // Positionner la tour en utilisant les coordonnées DOM
         const rookFromRect = rookFromSquare.getBoundingClientRect();
         const rookToRect = rookToSquare.getBoundingClientRect();
 
         animatedRook.style.width = `${pieceSize}px`;
         animatedRook.style.height = `${pieceSize}px`;
 
-        // Ajouter au DOM
         boardContainer.appendChild(animatedRook);
 
-        // Définir la position initiale de la tour basée sur le rect visuel
         animatedRook.style.left = `${rookFromRect.left - boardRect.left + offsetX}px`;
         animatedRook.style.top = `${rookFromRect.top - boardRect.top + offsetX}px`;
 
-        // Cacher la tour originale pendant l'animation
         const originalRookImg = rookFromSquare.querySelector('img');
         if (originalRookImg) {
-            // Définir explicitement l'opacité à 0 en plus d'ajouter la classe
             originalRookImg.style.opacity = '0';
             originalRookImg.classList.add('animating');
         }
 
-        // Nous utilisons une astuce requestAnimationFrame pour nous assurer que toute la mise en page est terminée
-        // avant de commencer la transition pour une animation plus fluide
         requestAnimationFrame(() => {
-            // Définir les transitions pour les deux pièces
             animatedPiece.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
             animatedRook.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
 
-            // Déplacer le roi vers la destination en utilisant les coordonnées visuelles
             const destXKing = toRect.left - boardRect.left + offsetX;
             const destYKing = toRect.top - boardRect.top + offsetX;
             animatedPiece.style.left = `${destXKing}px`;
             animatedPiece.style.top = `${destYKing}px`;
 
-            // Déplacer la tour vers la destination en utilisant les coordonnées visuelles
             const destXRook = rookToRect.left - boardRect.left + offsetX;
             const destYRook = rookToRect.top - boardRect.top + offsetX;
             animatedRook.style.left = `${destXRook}px`;
             animatedRook.style.top = `${destYRook}px`;
 
-            // Utiliser l'événement transitionend pour la fin
             let animationsCompleted = 0;
             const onTransitionEnd = () => {
                 animationsCompleted++;
 
-                // Quand les deux pièces ont terminé leurs transitions
                 if (animationsCompleted === 2) {
-                    // Vérifier si l'animation a été annulée
                     if (!STATE.animation.inProgress) return;
 
-                    // Mettre à jour l'interface utilisateur après la fin de l'animation
                     finishCurrentAnimation();
                 }
             };
@@ -1973,7 +1812,6 @@ function animatePieceMove(fromSquare, toSquare, piece, duration = 200, callback 
             animatedPiece.addEventListener('transitionend', onTransitionEnd, { once: true });
             animatedRook.addEventListener('transitionend', onTransitionEnd, { once: true });
 
-            // Délai de sécurité au cas où les transitions ne déclencheraient pas leurs événements
             setTimeout(() => {
                 if (STATE.animation.inProgress &&
                     STATE.animation.elements.includes(animatedPiece)) {
@@ -1982,29 +1820,21 @@ function animatePieceMove(fromSquare, toSquare, piece, duration = 200, callback 
             }, duration + 50);
         });
     } else {
-        // Animation de coup normal (non-roque)
         requestAnimationFrame(() => {
-            // Calculer la destination en utilisant les coordonnées visuelles
             const destX = toRect.left - boardRect.left + offsetX;
             const destY = toRect.top - boardRect.top + offsetX;
 
-            // Définir la transition
             animatedPiece.style.transition = `left ${duration}ms ease-out, top ${duration}ms ease-out`;
 
-            // Déplacer vers la destination
             animatedPiece.style.left = `${destX}px`;
             animatedPiece.style.top = `${destY}px`;
 
-            // Écouter la fin de la transition
             animatedPiece.addEventListener('transitionend', () => {
-                // Vérifier si l'animation a été annulée
                 if (!STATE.animation.inProgress) return;
 
-                // Terminer l'animation
                 finishCurrentAnimation();
             }, { once: true });
 
-            // Délai de sécurité au cas où la transition ne déclencherait pas son événement
             setTimeout(() => {
                 if (STATE.animation.inProgress &&
                     STATE.animation.elements.includes(animatedPiece)) {
@@ -2018,42 +1848,38 @@ function animatePieceMove(fromSquare, toSquare, piece, duration = 200, callback 
 function finishCurrentAnimation() {
     if (!STATE.animation.inProgress) return;
 
-    // Supprimer toutes les pièces animées
     STATE.animation.elements.forEach(element => {
         if (element && element.parentNode) {
             element.parentNode.removeChild(element);
         }
     });
 
-    // S'assurer que toutes les pièces qui étaient cachées pour l'animation sont à nouveau visibles
     document.querySelectorAll('.animating').forEach(el => {
         el.classList.remove('animating');
-        // Restaurer explicitement l'opacité
         el.style.opacity = '1';
     });
 
-    // Exécuter le callback de manière synchrone plutôt que d'attendre la fin de l'animation
     if (STATE.animation.callback) {
         const callback = STATE.animation.callback;
         STATE.animation.callback = null;
         callback();
     }
 
-    // Réinitialiser l'état d'animation
     STATE.animation.inProgress = false;
     STATE.animation.elements = [];
 }
 
-// ======= Fonctions de logique de jeu =======
-
-// Gérer le clic sur une case
+// ======= Game Logic Functions =======
 function handleSquareClick(position) {
-    // Si l'animation est en cours, la terminer
     if (STATE.animation.inProgress) {
         finishCurrentAnimation();
     }
 
-    // Vérifier si le jeu est actif et si c'est le tour du joueur
+    // Don't allow moves during navigation
+    if (STATE.navigation.isNavigating) {
+        return;
+    }
+
     if (STATE.gameStatus !== 'active' || !isPlayersTurn()) {
         return;
     }
@@ -2063,28 +1889,22 @@ function handleSquareClick(position) {
         ? (7 - rank) * 8 + (7 - file)
         : rank * 8 + file;
 
-    // Vérifier si une pièce est à la position cliquée et si c'est le tour du joueur actuel
     const pieceAtClicked = STATE.currentPosition[index];
     const isCurrentPlayerPiece = pieceAtClicked &&
         ChessRules.getPieceColor(pieceAtClicked) === ChessRules.gameState.activeColor;
 
     if (STATE.selectedSquare === null) {
-        // Si aucune case n'est sélectionnée et on clique sur une pièce du joueur actuel, la sélectionner
         if (isCurrentPlayerPiece) {
             STATE.selectedSquare = index;
             showPossibleMoves(index);
         }
     } else {
-        // Si une case est déjà sélectionnée
-
-        // Si on clique sur la même pièce qui est déjà sélectionnée, la désélectionner
         if (STATE.selectedSquare === index) {
             clearPossibleMoves();
             STATE.selectedSquare = null;
             return;
         }
 
-        // Si on clique sur une autre pièce du joueur actuel, la sélectionner à la place
         if (isCurrentPlayerPiece && STATE.selectedSquare !== index) {
             clearPossibleMoves();
             STATE.selectedSquare = index;
@@ -2092,17 +1912,13 @@ function handleSquareClick(position) {
             return;
         }
 
-        // Si on clique sur une case différente, essayer de déplacer la pièce
         if (STATE.selectedSquare !== index) {
-            // Obtenir les coups légaux pour la pièce sélectionnée à partir du cache pré-calculé
             const legalMoves = STATE.legalMoves[STATE.selectedSquare] || [];
             const legalMove = legalMoves.find(move => move.to === index);
 
             if (legalMove) {
-                // Gérer le coup
                 makeMove(STATE.selectedSquare, index, legalMove);
             } else {
-                // Effacer la sélection si on clique sur une destination illégale
                 clearPossibleMoves();
                 STATE.selectedSquare = null;
             }
@@ -2110,18 +1926,14 @@ function handleSquareClick(position) {
     }
 }
 
-// Exécuter un coup et l'envoyer au serveur
 function makeMove(fromIndex, toIndex, moveObj) {
-    // Vérifier la promotion
     const piece = STATE.currentPosition[fromIndex];
     const isPawn = piece.toLowerCase() === 'p';
     const toRank = Math.floor(toIndex / 8);
     const isLastRank = (piece === 'P' && toRank === 0) || (piece === 'p' && toRank === 7);
 
     if (isPawn && isLastRank) {
-        // Montrer le dialogue de promotion
         showPromotionDialog({from: fromIndex, to: toIndex}, (promotionPiece) => {
-            // Créer l'objet coup avec promotion
             const move = {
                 from: fromIndex,
                 to: toIndex,
@@ -2129,46 +1941,38 @@ function makeMove(fromIndex, toIndex, moveObj) {
                 promotionPiece: promotionPiece
             };
 
-            // Exécuter le coup localement avec animation
             const result = executeLocalMove(move, true);
 
             if (result.success) {
-                // Envoyer le coup au serveur
                 const uciMove = moveToUci(move);
                 sendMoveToServer(uciMove);
             }
         });
     } else {
-        // Exécuter le coup localement avec animation
         const result = executeLocalMove(moveObj, true);
 
         if (result.success) {
-            // Envoyer le coup au serveur
             const uciMove = moveToUci(moveObj);
             sendMoveToServer(uciMove);
         }
     }
 }
 
-// Mettre à jour setInitialBoardOrientation
 function setInitialBoardOrientation() {
-    console.log("Définition de l'orientation initiale de l'échiquier. Couleur de l'utilisateur:", STATE.userColor);
+    console.log("Setting initial board orientation. User color:", STATE.userColor);
 
-    // Retourner automatiquement l'échiquier pour le joueur noir
     if (STATE.userColor === 'black') {
-        console.log("Le joueur est noir, retournement de l'échiquier");
+        console.log("Player is black, flipping board");
         STATE.flipped = true;
-        STATE.manuallyFlipped = false; // C'est l'orientation naturelle pour les noirs
+        STATE.manuallyFlipped = false;
         updateBoard();
     } else {
-        // S'assurer que l'échiquier n'est pas retourné pour le joueur blanc
-        console.log("Le joueur est blanc, orientation normale");
+        console.log("Player is white, normal orientation");
         STATE.flipped = false;
-        STATE.manuallyFlipped = false; // C'est l'orientation naturelle pour les blancs
+        STATE.manuallyFlipped = false;
         updateBoard();
     }
 
-    // Toujours mettre à jour les boîtes de joueurs après avoir défini l'orientation
     updatePlayerBoxes();
 }
 
@@ -2179,13 +1983,12 @@ function updatePlayerBoxes() {
     const opponentInfo = document.getElementById('opponent-info');
 
     if (!topPlayerBox || !bottomPlayerBox || !playerInfo || !opponentInfo) {
-        console.error('Éléments de boîte de joueur non trouvés');
+        console.error('Player box elements not found');
         return;
     }
 
-    console.log(`Mise à jour des boîtes de joueurs. Échiquier retourné: ${STATE.flipped}, Retourné manuellement: ${STATE.manuallyFlipped}, Couleur de l'utilisateur: ${STATE.userColor}`);
+    console.log(`Updating player boxes. Board flipped: ${STATE.flipped}, Manually flipped: ${STATE.manuallyFlipped}, User color: ${STATE.userColor}`);
 
-    // D'abord, supprimer les divs d'informations de leurs parents actuels si nécessaire
     if (playerInfo.parentNode) {
         playerInfo.parentNode.removeChild(playerInfo);
     }
@@ -2194,59 +1997,48 @@ function updatePlayerBoxes() {
         opponentInfo.parentNode.removeChild(opponentInfo);
     }
 
-    // Si l'échiquier est dans son état de retournement manuel (l'utilisateur a cliqué sur le bouton de retournement)
-    // alors le joueur devrait être en haut, l'adversaire en bas
     if (STATE.manuallyFlipped) {
-        console.log("Retournement manuel: joueur en haut, adversaire en bas");
+        console.log("Manual flip: player on top, opponent on bottom");
         topPlayerBox.appendChild(playerInfo);
         bottomPlayerBox.appendChild(opponentInfo);
     } else {
-        // Orientation naturelle: joueur en bas, adversaire en haut
-        console.log("Orientation naturelle: joueur en bas, adversaire en haut");
+        console.log("Natural orientation: player on bottom, opponent on top");
         topPlayerBox.appendChild(opponentInfo);
         bottomPlayerBox.appendChild(playerInfo);
     }
 }
 
-// Exécuter un coup localement (sur le client)
 function executeLocalMove(moveObj, shouldAnimate = true) {
-    // Faire une copie de l'objet coup
     const move = {...moveObj};
 
-    // Sauvegarder la pièce qui est déplacée avant tout changement
     const piece = STATE.currentPosition[move.from];
 
-    // Obtenir les éléments de case de départ et d'arrivée pour l'animation
     const fromSquare = getSquareElement(move.from);
     const toSquare = getSquareElement(move.to);
 
     if (!fromSquare || !toSquare) {
-        console.error('Impossible de trouver les cases pour l\'animation');
+        console.error('Cannot find squares for animation');
         return { success: false, reason: 'animation_error' };
     }
 
-    // Exécuter le coup dans le moteur de règles
     const result = ChessRules.makeMove(move);
 
     if (!result.success) {
-        console.error('Échec de l\'exécution du coup dans le moteur de règles:', result.reason);
+        console.error('Failed to execute move in rules engine:', result.reason);
         return result;
     }
 
-    // Mettre à jour la position actuelle après un coup réussi
     STATE.currentPosition = [...ChessRules.gameState.position];
 
-    // Générer une notation algébrique appropriée
+    // FIXED: Improved move notation generation
     let notation;
     if (piece.toLowerCase() === 'p') {
-        // Gestion spéciale pour les coups de pions
         if (move.flags === 'promotion') {
-            notation = indexToAlgebraic(move.to) + '=' + move.promotionPiece.toUpperCase();
+            const captureFile = result.capturedPiece ? indexToAlgebraic(move.from)[0] + 'x' : '';
+            notation = captureFile + indexToAlgebraic(move.to) + '=' + move.promotionPiece.toUpperCase();
         } else if (result.capturedPiece || move.flags === 'en_passant') {
-            // Capture
             notation = indexToAlgebraic(move.from)[0] + 'x' + indexToAlgebraic(move.to);
         } else {
-            // Coup normal de pion
             notation = indexToAlgebraic(move.to);
         }
     } else if (move.flags === 'kingside_castle') {
@@ -2254,7 +2046,6 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
     } else if (move.flags === 'queenside_castle') {
         notation = 'O-O-O';
     } else {
-        // Coup de pièce standard
         notation = piece.toUpperCase();
         if (result.capturedPiece) {
             notation += 'x';
@@ -2262,17 +2053,14 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
         notation += indexToAlgebraic(move.to);
     }
 
-    // Ajouter l'indicateur d'échec ou d'échec et mat
     if (ChessRules.checkGameState() === 'checkmate') {
         notation += '#';
     } else if (result.isCheck) {
         notation += '+';
     }
 
-    // Créer le format UCI pour la communication serveur (par exemple, "e2e4")
     const uciNotation = indexToAlgebraic(move.from) + indexToAlgebraic(move.to);
 
-    // Ajouter le coup à l'historique
     STATE.moveHistory.push({
         from: move.from,
         to: move.to,
@@ -2284,17 +2072,16 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
         uci: uciNotation
     });
 
-    // Mettre à jour l'interface utilisateur
+    // NEW: Store position after this move for navigation
+    STATE.navigation.positions.push(STATE.currentPosition.slice());
+
     updateMovesList();
 
-    // Gérer l'animation seulement si demandée (pour les clics, pas pour le drag & drop)
     if (shouldAnimate) {
         if (move.flags === 'kingside_castle' || move.flags === 'queenside_castle') {
-            // Animation spéciale de roque avec roi et tour
             const color = ChessRules.getPieceColor(piece);
             const isKingside = move.flags === 'kingside_castle';
 
-            // Calculer les positions logiques pour la tour
             const rookFromIndex = color === 'w' ?
                 (isKingside ? 63 : 56) :
                 (isKingside ? 7 : 0);
@@ -2303,7 +2090,6 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
                 (isKingside ? 61 : 59) :
                 (isKingside ? 5 : 3);
 
-            // Obtenir les cases visuelles pour l'animation de la tour
             const rookFromSquare = getSquareElement(rookFromIndex);
             const rookToSquare = getSquareElement(rookToIndex);
 
@@ -2314,56 +2100,43 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
                     rookPiece: color === 'w' ? 'R' : 'r'
                 };
 
-                // Animer le roi et la tour ensemble
                 animatePieceMove(fromSquare, toSquare, piece, 200, () => {
-                    // S'assurer de mettre à jour l'échiquier après la fin de l'animation
                     updateBoard();
                 }, true, rookData);
             } else {
-                // Fallback si les cases de la tour ne sont pas trouvées
                 animatePieceMove(fromSquare, toSquare, piece, 200, () => {
                     updateBoard();
                 });
             }
         } else {
-            // Animation de coup normal
             animatePieceMove(fromSquare, toSquare, piece, 200, () => {
-                // Critique: mettre à jour l'échiquier après la fin de l'animation
                 updateBoard();
             });
         }
     }
 
-    // Effacer la sélection
     clearPossibleMoves();
     STATE.selectedSquare = null;
     
     if (result.success) {
-        // Obtenir la couleur du joueur qui vient de jouer
         const playerColor = STATE.userColor;
-
-        // Mettre à jour l'horloge après le coup
         handleClockAfterMove(playerColor);
     }
 
     if (result.success) {
-        // Vérifier si le jeu s'est terminé
         const gameState = ChessRules.checkGameState();
         if (gameState === 'checkmate' || gameState === 'stalemate' ||
             gameState === 'draw_fifty_move' || gameState.includes('draw')) {
 
-            // Créer un objet de résultat avec des détails spécifiques
             const gameResult = {
                 game_id: STATE.gameId
             };
 
             if (gameState === 'checkmate') {
-                // Échec et mat - le joueur actuel a gagné
                 gameResult.result = 'win';
                 gameResult.winner = STATE.userId;
                 gameResult.result_type = 'checkmate';
             } else {
-                // Nulle avec raison spécifique
                 gameResult.result = 'draw';
                 gameResult.winner = 'draw';
 
@@ -2372,24 +2145,20 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
                 } else if (gameState === 'draw_fifty_move') {
                     gameResult.result_type = 'fifty_move';
                 } else {
-                    // Par défaut nulle générique si on ne peut pas déterminer la raison spécifique
                     gameResult.result_type = 'other';
                 }
             }
 
-            // Montrer le résultat après les mises à jour de l'échiquier et l'animation
             if (shouldAnimate) {
                 const originalCallback = STATE.animation.callback;
                 STATE.animation.callback = () => {
                     if (originalCallback) originalCallback();
 
-                    // Petit délai pour s'assurer que l'interface utilisateur est mise à jour en premier
                     setTimeout(() => {
                         showGameResult(gameResult);
                     }, 100);
                 };
             } else {
-                // Pour le drag & drop, montrer immédiatement
                 setTimeout(() => {
                     showGameResult(gameResult);
                 }, 100);
@@ -2400,44 +2169,36 @@ function executeLocalMove(moveObj, shouldAnimate = true) {
     return result;
 }
 
-// Gérer le coup de l'adversaire reçu du serveur
 function handleOpponentMove(moveData) {
-    console.log('Coup de l\'adversaire reçu:', moveData);
+    console.log('Opponent move received:', moveData);
 
-    // Analyser le coup UCI
     const from = algebraicToIndex(moveData.move.substring(0, 2));
     const to = algebraicToIndex(moveData.move.substring(2, 4));
 
-    // Vérification de sécurité pour les indices invalides
     if (from < 0 || from > 63 || to < 0 || to > 63) {
-        console.error('Indices de coup invalides:', from, to);
+        console.error('Invalid move indices:', from, to);
         return;
     }
 
     const piece = STATE.currentPosition[from];
     if (!piece) {
-        console.error('Aucune pièce trouvée à la case source:', from);
-        // Essayer de récupérer en chargeant la FEN si disponible
+        console.error('No piece found at source square:', from);
         if (moveData.fen) {
             loadFEN(moveData.fen);
         }
         return;
     }
 
-    // Déterminer le type/flags du coup
     let flags = null;
     let promotionPiece = null;
 
-    // Vérifier la promotion
     if (moveData.move.length === 5) {
         flags = 'promotion';
         promotionPiece = moveData.move[4].toLowerCase();
     }
-    // Vérifier le roque
     else if (piece.toLowerCase() === 'k' && Math.abs(from - to) > 1) {
         flags = (to % 8 > from % 8) ? 'kingside_castle' : 'queenside_castle';
     }
-    // Vérifier la prise en passant
     else if (piece.toLowerCase() === 'p' && Math.abs(from % 8 - to % 8) === 1 &&
              STATE.currentPosition[to] === '') {
         flags = 'en_passant';
@@ -2445,16 +2206,13 @@ function handleOpponentMove(moveData) {
 
     const move = { from, to, flags, promotionPiece };
 
-    // Obtenir les éléments de case de départ et d'arrivée pour l'animation
     const fromSquare = getSquareElement(from);
     const toSquare = getSquareElement(to);
 
-    // Exécuter le coup dans le moteur de règles
     const result = ChessRules.makeMove(move);
 
     if (!result.success) {
-        console.error('Échec de l\'exécution du coup de l\'adversaire:', result.reason);
-        // Fallback pour charger la position à partir de la FEN si disponible
+        console.error('Failed to execute opponent move:', result.reason);
         if (moveData.fen) {
             loadFEN(moveData.fen);
         }
@@ -2462,18 +2220,16 @@ function handleOpponentMove(moveData) {
     }
     
     const opponentColor = STATE.userColor === 'white' ? 'black' : 'white';
-
-    // Mettre à jour l'horloge après le coup
     handleClockAfterMove(opponentColor);
     
-    // Mettre à jour la position actuelle
     STATE.currentPosition = [...ChessRules.gameState.position];
 
-    // Générer une notation appropriée (même logique que dans executeLocalMove)
+    // Generate notation for opponent move
     let notation;
     if (piece.toLowerCase() === 'p') {
         if (move.flags === 'promotion') {
-            notation = indexToAlgebraic(move.to) + '=' + move.promotionPiece.toUpperCase();
+            const captureFile = result.capturedPiece ? indexToAlgebraic(move.from)[0] + 'x' : '';
+            notation = captureFile + indexToAlgebraic(move.to) + '=' + move.promotionPiece.toUpperCase();
         } else if (result.capturedPiece || move.flags === 'en_passant') {
             notation = indexToAlgebraic(move.from)[0] + 'x' + indexToAlgebraic(move.to);
         } else {
@@ -2491,14 +2247,12 @@ function handleOpponentMove(moveData) {
         notation += indexToAlgebraic(move.to);
     }
 
-    // Ajouter l'indicateur d'échec ou d'échec et mat
     if (ChessRules.checkGameState() === 'checkmate') {
         notation += '#';
     } else if (result.isCheck) {
         notation += '+';
     }
 
-    // Ajouter le coup à l'historique
     STATE.moveHistory.push({
         from: move.from,
         to: move.to,
@@ -2510,11 +2264,12 @@ function handleOpponentMove(moveData) {
         uci: moveData.move
     });
 
-    // Mettre à jour l'interface utilisateur
+    // NEW: Store position after opponent move
+    STATE.navigation.positions.push(STATE.currentPosition.slice());
+
     updateMovesList();
     
     if (moveData.status === 'completed') {
-        // Déterminer le résultat du jeu
         let result = {
             game_id: STATE.gameId
         };
@@ -2522,18 +2277,14 @@ function handleOpponentMove(moveData) {
         if (moveData.winner === 'draw') {
             result.result = 'draw';
 
-            // Essayer de déterminer la raison de la nulle
             if (result.result_type) {
                 result.result = `draw_${result.result_type}`;
             } else {
-                // Si aucune raison spécifique, vérifier l'état de l'échiquier
                 const gameState = ChessRules.checkGameState();
                 if (gameState === 'stalemate') {
                     result.result = 'draw_stalemate';
                 } else if (gameState === 'draw_fifty_move') {
                     result.result = 'draw_fifty_move';
-                } else if (board.isInsufficientMaterial()) {
-                    result.result = 'draw_insufficient';
                 }
             }
         } else if (moveData.winner === STATE.userId) {
@@ -2544,7 +2295,6 @@ function handleOpponentMove(moveData) {
             result.winner = moveData.winner;
         }
 
-        // Après l'animation, montrer le résultat du jeu
         const originalCallback = STATE.animation.callback;
         STATE.animation.callback = () => {
             if (originalCallback) originalCallback();
@@ -2552,141 +2302,106 @@ function handleOpponentMove(moveData) {
         };
     }
     
-    // Animer le coup
     animatePieceMove(fromSquare, toSquare, piece, 200, () => {
-        // Critique: mettre à jour l'échiquier après la fin de l'animation
         updateBoard();
     });
 }
 
-// Charger une position à partir de la FEN
 function loadFEN(fen) {
     try {
-        // Utiliser le moteur de règles pour analyser la FEN
         const position = ChessRules.parseFEN(fen);
-
-        // Mettre à jour l'état de l'application
         STATE.currentPosition = [...position];
-
-        // Mettre à jour l'affichage de l'échiquier
         updateBoard();
-
         return true;
     } catch (error) {
-        console.error('Erreur lors de l\'analyse de la FEN:', error);
+        console.error('Error parsing FEN:', error);
         return false;
     }
 }
 
-// ======= Communication serveur =======
-
-// Initialiser la connexion Socket.IO
+// ======= Server Communication =======
 function initSocket() {
-    // Charger l'ID du jeu à partir de l'URL ou de l'entrée cachée
     const gameIdInput = document.getElementById('game-id');
     if (!gameIdInput || !gameIdInput.value) {
-        console.error('Aucun ID de jeu trouvé');
-        alert('L\'ID du jeu est manquant. Veuillez essayer de rejoindre le jeu depuis le tableau de bord.');
+        console.error('No game ID found');
+        alert('Game ID is missing. Please try joining the game from the dashboard.');
         return;
     }
 
     const gameId = gameIdInput.value;
-    console.log('Initialisation de la connexion socket pour le jeu:', gameId);
+    console.log('Initializing socket connection for game:', gameId);
 
     STATE.gameId = gameId;
     STATE.userColor = document.getElementById('user-color').value || null;
 
-    // Se connecter au serveur Socket.IO
     STATE.socket = io();
 
-    // Événement de connexion
     STATE.socket.on('connect', () => {
-        console.log('Connecté au serveur');
+        console.log('Connected to server');
 
-        // Rejoindre la salle de jeu immédiatement lors de la connexion
         const token = localStorage.getItem('token');
         if (!token) {
-            console.error('Aucun token d\'authentification trouvé');
+            console.error('No authentication token found');
             window.location.href = '/login?redirect=' + encodeURIComponent(window.location.href);
             return;
         }
 
-        // D'abord rejoindre la salle de jeu AVANT d'obtenir les données du jeu
         STATE.socket.emit('join_game', {
             game_id: STATE.gameId,
             token: token
         });
 
-        console.log('Rejoindre la salle de jeu:', STATE.gameId);
+        console.log('Joining game room:', STATE.gameId);
 
-        // Configurer la synchronisation de l\'horloge
         setupClockSync();
 
-        // Petit délai avant de charger les données du jeu pour s'assurer que le rejoignement de la salle se termine
         setTimeout(() => {
-            // Charger les données du jeu via l'API
             fetchGameData(STATE.gameId, token);
         }, 100);
     });
 
-    // Événement de déconnexion
     STATE.socket.on('disconnect', () => {
-        console.log('Déconnecté du serveur');
+        console.log('Disconnected from server');
     });
 
-    // Événement de jeu rejoint
     STATE.socket.on('game_joined', (data) => {
-        console.log('Salle de jeu rejointe', data);
+        console.log('Game room joined', data);
     });
 
-    // Événement de jeu mis à jour
     STATE.socket.on('game_updated', (data) => {
-        console.log('Événement de jeu mis à jour reçu:', data);
+        console.log('Game updated event received:', data);
 
-        // Si le jeu est maintenant actif (quelqu\'un a rejoint), actualiser les données du jeu
         if (data.status === 'active' && STATE.gameStatus === 'waiting') {
-            console.log('Le jeu est maintenant actif, actualisation des données...');
+            console.log('Game is now active, refreshing data...');
 
-            // Actualiser les données du jeu depuis le serveur
             const token = localStorage.getItem('token');
             fetchGameData(STATE.gameId, token);
 
-            // Montrer une notification
-            showNotification('Le jeu est maintenant actif !', 'success');
+            showNotification('Game is now active!', 'success');
         }
     });
 
-    // Événement de coup joué
     STATE.socket.on('move_made', (moveData) => {
-        console.log('L\'adversaire a joué un coup', moveData);
-
-        // Gérer le coup de l'adversaire
+        console.log('Opponent made a move', moveData);
         handleOpponentMove(moveData);
     });
 
-    // Événement de jeu commencé
     STATE.socket.on('game_started', (gameData) => {
-        console.log('Jeu commencé', gameData);
+        console.log('Game started', gameData);
 
-        // Mettre à jour les informations de l'adversaire
         updateOpponentInfo(gameData.opponent);
 
-        // Définir le jeu comme actif
         STATE.gameStatus = 'active';
 
-        // Mettre à jour l'interface utilisateur
         updateGameStateUI();
 
-        // Montrer une notification
-        showNotification('L\'adversaire a rejoint le jeu !', 'success');
+        showNotification('Opponent joined the game!', 'success');
 
-        // Cacher le conteneur de code de jeu s'il est affiché
         const gameCodeContainer = document.getElementById('game-code-container');
         if (gameCodeContainer) {
             gameCodeContainer.style.display = 'none';
         }
 
-        // Fermer le modal d'invitation s'il est ouvert
         const inviteModal = document.getElementById('invite-modal');
         if (inviteModal && inviteModal.style.display !== 'none') {
             inviteModal.style.display = 'none';
@@ -2694,14 +2409,11 @@ function initSocket() {
     });
     
     STATE.socket.on('clock_update', (data) => {
-        console.log('Mise à jour de l\'horloge reçue:', data);
+        console.log('Clock update received:', data);
 
-        // Ne pas mettre à jour si une animation est en cours pour éviter les problèmes visuels
         if (STATE.animation.inProgress) {
-            console.log('Animation en cours, retard de la mise à jour de l\'horloge');
-            // Stocker la mise à jour pour l'appliquer après l'animation
+            console.log('Animation in progress, delaying clock update');
             setTimeout(() => {
-                // Mettre à jour l'état de l'horloge
                 if (data.white_time_ms !== undefined) {
                     STATE.clock.white = data.white_time_ms;
                 }
@@ -2715,13 +2427,10 @@ function initSocket() {
                     STATE.clock.lastMoveTime = new Date(data.last_move_timestamp).getTime();
                 }
 
-                // Mettre à jour les affichages
                 updateClockDisplay('white', STATE.clock.white);
                 updateClockDisplay('black', STATE.clock.black);
-            }, 100); // Court délai pour permettre à l'animation de se terminer
+            }, 100);
         } else {
-            // Mise à jour normale
-            // Mettre à jour l'état de l'horloge
             if (data.white_time_ms !== undefined) {
                 STATE.clock.white = data.white_time_ms;
             }
@@ -2735,27 +2444,21 @@ function initSocket() {
                 STATE.clock.lastMoveTime = new Date(data.last_move_timestamp).getTime();
             }
 
-            // Mettre à jour les affichages
             updateClockDisplay('white', STATE.clock.white);
             updateClockDisplay('black', STATE.clock.black);
         }
     });
     
     STATE.socket.on('game_result', (result) => {
-        console.log('Résultat du jeu reçu:', result);
+        console.log('Game result received:', result);
 
-        // Arrêter l'horloge quand le jeu se termine
         stopClockInterval();
         STATE.clock.started = false;
 
-        // Mettre à jour le statut du jeu
         STATE.gameStatus = 'completed';
 
-        // Traiter le résultat avec les informations de résultat améliorées
         if (result.result_type) {
-            // Si nous avons un type de résultat spécifique, l'ajouter à l'objet résultat
             if (!result.result) {
-                // Définir un résultat par défaut basé sur le gagnant
                 if (result.winner === 'draw') {
                     result.result = 'draw';
                 } else if (result.winner === STATE.userId) {
@@ -2765,43 +2468,34 @@ function initSocket() {
                 }
             }
 
-            // Créer un type de résultat combiné pour la fonction showGameResult
             if (result.result === 'draw') {
                 result.result = `draw_${result.result_type}`;
             } else {
-                // Pour les victoires/défaites, les préfixer avec la cause spécifique
                 result.result = `${result.result}_${result.result_type}`;
             }
         }
 
-        // Montrer le résultat du jeu
         showGameResult(result);
     });
 
-    // Événement d'erreur
     STATE.socket.on('error', (error) => {
-        console.error('Erreur socket:', error);
-        alert(error.message || 'Une erreur s\'est produite avec la connexion du jeu');
+        console.error('Socket error:', error);
+        alert(error.message || 'An error occurred with the game connection');
     });
     
-    // Offre de nulle reçue
     STATE.socket.on('draw_offered', (data) => {
-        console.log('Nulle offerte par l\'adversaire:', data);
+        console.log('Draw offered by opponent:', data);
 
-        // Montrer le modal d'offre de nulle seulement s'il n'a pas été envoyé par l'utilisateur actuel
         if (data.user_id !== STATE.userId) {
-            // Montrer le modal d'offre de nulle
             showDrawOfferModal();
-
-            // Montrer une notification
-            showNotification('Votre adversaire a offert une nulle', 'info');
+            showNotification('Your opponent offered a draw', 'info');
         }
     });
 }
 
 async function fetchGameData(gameId, token) {
     try {
-        console.log('Récupération des données du jeu...');
+        console.log('Fetching game data...');
 
         const response = await fetch(`/api/games/${gameId}`, {
             method: 'GET',
@@ -2812,25 +2506,21 @@ async function fetchGameData(gameId, token) {
         });
 
         if (!response.ok) {
-            throw new Error('Échec du chargement des données du jeu');
+            throw new Error('Failed to load game data');
         }
 
         const gameData = await response.json();
-        console.log('Données du jeu chargées:', gameData);
+        console.log('Game data loaded:', gameData);
 
-        // Mettre à jour l'état du jeu
         STATE.gameStatus = gameData.status;
 
-        // Mettre à jour la couleur de l'utilisateur - CRITIQUE pour l'orientation correcte de l'échiquier
         if (gameData.your_color) {
             STATE.userColor = gameData.your_color;
             document.getElementById('user-color').value = gameData.your_color;
         }
 
-        // Mettre à jour les informations du joueur
         updatePlayerInfo(gameData);
 
-        // Mettre à jour les informations de l'adversaire
         const opponent = STATE.userColor === 'white' ? gameData.black_player : gameData.white_player;
         if (opponent) {
             updateOpponentInfo(opponent);
@@ -2840,49 +2530,39 @@ async function fetchGameData(gameId, token) {
             updateTimeControlDisplay(gameData.time_control);
         }
         
-        // Important: D'abord charger l'historique des coups pour reconstruire le jeu
         if (gameData.moves && gameData.moves.length > 0) {
             loadMoveHistory(gameData.moves);
         } else if (gameData.fen) {
-            // Si pas de coups mais FEN disponible, l'utiliser
             loadFEN(gameData.fen);
         } else {
-            // Réinitialiser à la position de départ si pas de coups ou FEN
             setupStartingPosition();
         }
 
-        // Définir l'orientation de l'échiquier APRÈS avoir chargé les positions
         setInitialBoardOrientation();
 
-        // Initialiser les horloges avec les données du serveur
         initClocks(gameData);
 
-        // Forcer la mise à jour de l'échiquier après avoir chargé la position
         updateBoard();
 
-        // Mettre à jour les boîtes de joueurs
         updatePlayerBoxes();
 
-        // Mettre à jour l'interface utilisateur basée sur le statut du jeu
         if (gameData.status === 'completed') {
             showGameResult(gameData.winner || 'draw');
         } else if (gameData.status === 'waiting') {
-            // Montrer le code de jeu si nous sommes le créateur
             const whitePlayerId = gameData.white_player ? gameData.white_player.user_id : null;
             if (whitePlayerId === localStorage.getItem('userId')) {
                 showGameInviteModal(gameData.game_code);
             }
         }
 
-        console.log('Jeu chargé avec succès. Position actuelle:', [...STATE.currentPosition]);
+        console.log('Game loaded successfully. Current position:', [...STATE.currentPosition]);
 
     } catch (error) {
-        console.error('Erreur lors du chargement des données du jeu:', error);
-        showNotification('Échec du chargement des données du jeu. Veuillez actualiser la page.', 'error');
+        console.error('Error loading game data:', error);
+        showNotification('Failed to load game data. Please refresh the page.', 'error');
     }
 }
 
-// Ajouter une fonction pour montrer le modal d'invitation de jeu
 function showGameInviteModal(gameCode) {
     const modal = document.getElementById('invite-modal');
     if (!modal) return;
@@ -2899,9 +2579,9 @@ function showGameInviteModal(gameCode) {
     if (copyCodeBtn) {
         copyCodeBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(gameCode);
-            copyCodeBtn.textContent = 'Copié !';
+            copyCodeBtn.textContent = 'Copied!';
             setTimeout(() => {
-                copyCodeBtn.textContent = 'Copier';
+                copyCodeBtn.textContent = 'Copy';
             }, 2000);
         });
     }
@@ -2909,9 +2589,9 @@ function showGameInviteModal(gameCode) {
     if (copyLinkBtn) {
         copyLinkBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(linkInput.value);
-            copyLinkBtn.textContent = 'Copié !';
+            copyLinkBtn.textContent = 'Copied!';
             setTimeout(() => {
-                copyLinkBtn.textContent = 'Copier';
+                copyLinkBtn.textContent = 'Copy';
             }, 2000);
         });
     }
@@ -2922,43 +2602,37 @@ function showGameInviteModal(gameCode) {
         });
     }
 
-    // Montrer le modal
     modal.style.display = 'flex';
 }
 
-// Fonction pour mettre à jour les informations du joueur
 function updatePlayerInfo(gameData) {
     const playerName = document.getElementById('player-name');
     const playerRating = document.getElementById('player-rating');
 
     if (!playerName || !playerRating) return;
 
-    // Déterminer les données du joueur basées sur la couleur de l'utilisateur
     const player = STATE.userColor === 'white' ? gameData.white_player : gameData.black_player;
 
     if (player) {
-        // Nous avons des données de joueur du jeu
         playerName.textContent = player.username;
         playerRating.textContent = `ELO: ${player.elo || '?'}`;
 
-        // Stocker notre ID utilisateur pour les comparaisons ultérieures
         STATE.userId = player.user_id;
     } else {
-        // Fallback aux données de stockage local
-        playerName.textContent = localStorage.getItem('username') || 'Vous';
+        playerName.textContent = localStorage.getItem('username') || 'You';
         playerRating.textContent = '';
         STATE.userId = localStorage.getItem('userId');
     }
 
-    console.log(`Informations du joueur mises à jour. L'utilisateur est ${STATE.userColor}.`);
+    console.log(`Player info updated. User is ${STATE.userColor}.`);
 }
 
-// Fonction pour charger l'historique des coups
 function loadMoveHistory(moves) {
-    // Effacer l'historique des coups existant
     STATE.moveHistory = [];
 
-    // Réinitialiser la position à la position de départ
+    // Reset navigation positions
+    STATE.navigation.positions = [];
+
     ChessRules.setupPosition([
         'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
         'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p',
@@ -2970,26 +2644,24 @@ function loadMoveHistory(moves) {
         'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'
     ]);
 
-    // Rejouer les coups pour reconstruire la notation appropriée et la position actuelle
+    // Store starting position
+    STATE.navigation.positions.push(ChessRules.gameState.position.slice());
+
     for (const move of moves) {
-        // Convertir le coup UCI en format interne
         const from = algebraicToIndex(move.move.substring(0, 2));
         const to = algebraicToIndex(move.move.substring(2, 4));
 
-        // Ignorer les coups invalides
         if (from < 0 || to < 0 || from > 63 || to > 63) {
-            console.error('Coup invalide dans l\'historique:', move);
+            console.error('Invalid move in history:', move);
             continue;
         }
 
-        // Obtenir la pièce qui est déplacée
         const piece = ChessRules.gameState.position[from];
         if (!piece) {
-            console.error('Aucune pièce trouvée à la position:', from, 'pour le coup:', move);
+            console.error('No piece found at position:', from, 'for move:', move);
             continue;
         }
 
-        // Déterminer la pièce de promotion si nécessaire
         let flags = null;
         let promotionPiece = null;
 
@@ -2997,39 +2669,35 @@ function loadMoveHistory(moves) {
             flags = 'promotion';
             promotionPiece = move.move[4].toLowerCase();
         }
-        // Vérifier le roque
         else if (piece.toLowerCase() === 'k' && Math.abs(from - to) > 1) {
             flags = (to % 8 > from % 8) ? 'kingside_castle' : 'queenside_castle';
         }
-        // Vérifier la prise en passant
         else if (piece.toLowerCase() === 'p' &&
                 Math.abs(from % 8 - to % 8) === 1 &&
                 ChessRules.gameState.position[to] === '') {
             flags = 'en_passant';
         }
 
-        // Créer l'objet coup
         const moveObj = { from, to, flags, promotionPiece };
 
-        // Exécuter le coup dans le moteur de règles
         const result = ChessRules.makeMove(moveObj);
 
         if (!result.success) {
-            console.error('Échec de l\'exécution du coup dans l\'historique:', move);
+            console.error('Failed to execute move in history:', move);
             continue;
         }
 
-        // Générer une notation algébrique appropriée
+        // Store position after this move
+        STATE.navigation.positions.push(ChessRules.gameState.position.slice());
+
         let notation;
         if (piece.toLowerCase() === 'p') {
-            // Coup de pion
             if (flags === 'promotion') {
-                notation = indexToAlgebraic(to) + '=' + promotionPiece.toUpperCase();
+                const captureFile = result.capturedPiece ? indexToAlgebraic(from)[0] + 'x' : '';
+                notation = captureFile + indexToAlgebraic(to) + '=' + promotionPiece.toUpperCase();
             } else if (result.capturedPiece || flags === 'en_passant') {
-                // Capture
                 notation = indexToAlgebraic(from)[0] + 'x' + indexToAlgebraic(to);
             } else {
-                // Coup normal de pion
                 notation = indexToAlgebraic(to);
             }
         } else if (flags === 'kingside_castle') {
@@ -3037,7 +2705,6 @@ function loadMoveHistory(moves) {
         } else if (flags === 'queenside_castle') {
             notation = 'O-O-O';
         } else {
-            // Coup de pièce standard
             notation = piece.toUpperCase();
             if (result.capturedPiece) {
                 notation += 'x';
@@ -3045,12 +2712,10 @@ function loadMoveHistory(moves) {
             notation += indexToAlgebraic(to);
         }
 
-        // Ajouter l'indicateur d'échec ou d'échec et mat
         if (result.isCheck) {
             notation += '+';
         }
 
-        // Ajouter le coup à l'historique
         STATE.moveHistory.push({
             from: from,
             to: to,
@@ -3063,21 +2728,17 @@ function loadMoveHistory(moves) {
         });
     }
 
-    // Mettre à jour la position actuelle pour correspondre à la position finale des coups rejoués
     STATE.currentPosition = [...ChessRules.gameState.position];
 
-    // Mettre à jour l'affichage de la liste des coups
     updateMovesList();
 }
 
-// Envoyer un coup au serveur
 async function sendMoveToServer(uciMove) {
     const token = localStorage.getItem('token');
 
     try {
-        console.log('Envoi du coup au serveur:', uciMove);
+        console.log('Sending move to server:', uciMove);
 
-        // Envoyer le coup via l'API REST
         const response = await fetch(`/api/games/${STATE.gameId}/move`, {
             method: 'POST',
             headers: {
@@ -3089,33 +2750,29 @@ async function sendMoveToServer(uciMove) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('Le serveur a rejeté le coup:', errorData);
-            alert('Coup échoué: ' + (errorData.error || 'Erreur inconnue'));
+            console.error('Server rejected move:', errorData);
+            alert('Move failed: ' + (errorData.error || 'Unknown error'));
 
-            // Recharger l'état actuel du jeu depuis le serveur pour corriger toute désynchronisation
             fetchGameData(STATE.gameId, token);
             return;
         }
 
         const gameData = await response.json();
-        console.log('Coup accepté par le serveur:', gameData);
+        console.log('Move accepted by server:', gameData);
 
-        // Optionnel: mettre à jour avec d'autres changements d'état du jeu de la réponse
         if (gameData.status === 'completed') {
-            // Gérer la fin du jeu si nécessaire
-            console.log('Jeu terminé avec le résultat:', gameData.winner);
+            console.log('Game completed with result:', gameData.winner);
         }
     } catch (error) {
-        console.error('Erreur lors de l\'envoi du coup au serveur:', error);
-        alert('Échec de l\'envoi du coup au serveur. Veuillez réessayer.');
+        console.error('Error sending move to server:', error);
+        alert('Failed to send move to server. Please try again.');
     }
 }
 
-// Mettre à jour les informations de l'adversaire dans l'interface utilisateur
 function updateOpponentInfo(opponent) {
     if (!opponent) return;
 
-    console.log('Mise à jour des informations de l\'adversaire:', opponent);
+    console.log('Updating opponent info:', opponent);
 
     STATE.opponentId = opponent.user_id;
     STATE.opponentName = opponent.username;
@@ -3124,180 +2781,146 @@ function updateOpponentInfo(opponent) {
     const opponentRating = document.getElementById('opponent-rating');
 
     if (opponentName) {
-        opponentName.textContent = opponent.username || 'Adversaire';
+        opponentName.textContent = opponent.username || 'Opponent';
     }
 
     if (opponentRating) {
         opponentRating.textContent = `ELO: ${opponent.elo || '?'}`;
     }
 
-    // Mettre à jour les boîtes de joueurs après avoir mis à jour les informations de l'adversaire
     updatePlayerBoxes();
 
-    // Mettre à jour le statut du jeu puisque nous avons maintenant un adversaire
     if (STATE.gameStatus === 'waiting') {
         STATE.gameStatus = 'active';
         updateGameStateUI();
     }
 
-    // Montrer une notification
-    showNotification(`${opponent.username} a rejoint le jeu !`, 'success');
+    showNotification(`${opponent.username} joined the game!`, 'success');
 }
 
-// Montrer une notification
 function showNotification(message, type = 'info') {
-    // Vérifier si la notification existe déjà
     let notification = document.querySelector('.notification');
 
-    // Créer si elle n'existe pas
     if (!notification) {
         notification = document.createElement('div');
         notification.className = 'notification';
         document.body.appendChild(notification);
     }
 
-    // Définir le type et le message
     notification.className = `notification ${type}`;
     notification.textContent = message;
 
-    // Montrer la notification
     notification.style.display = 'block';
 
-    // Cacher après 3 secondes
     setTimeout(() => {
         notification.style.display = 'none';
     }, 3000);
 }
 
-// Montrer le modal d'offre de nulle
 function showDrawOfferModal() {
     const modal = document.getElementById('draw-offer-modal');
     if (!modal) {
-        console.error('Modal d\'offre de nulle non trouvé');
+        console.error('Draw offer modal not found');
         return;
     }
 
     modal.style.display = 'flex';
 
-    // Gérer le bouton d'acceptation
     const acceptBtn = document.getElementById('accept-draw');
     if (acceptBtn) {
         acceptBtn.onclick = () => {
             if (STATE.socket) {
-                // Envoyer l'acceptation de nulle au serveur
                 STATE.socket.emit('accept_draw', {
                     game_id: STATE.gameId,
                     token: localStorage.getItem('token')
                 });
 
-                // Désactiver l'interaction du jeu
                 disableGameInteraction();
 
-                // Montrer une notification
-                showNotification('Vous avez accepté l\'offre de nulle', 'info');
+                showNotification('You accepted the draw offer', 'info');
             }
             modal.style.display = 'none';
         };
     }
 
-    // Gérer le bouton de refus
     const declineBtn = document.getElementById('decline-draw');
     if (declineBtn) {
         declineBtn.onclick = () => {
             if (STATE.socket) {
-                // Envoyer le refus de nulle au serveur
                 STATE.socket.emit('decline_draw', {
                     game_id: STATE.gameId,
                     token: localStorage.getItem('token')
                 });
 
-                // Montrer une notification
-                showNotification('Vous avez refusé l\'offre de nulle', 'info');
+                showNotification('You declined the draw offer', 'info');
             }
             modal.style.display = 'none';
         };
     }
 }
 
-// Formater le temps pour les messages
 function formatTime(date) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// ======= Écouteurs d'événements et initialisation =======
-
-// Initialiser le jeu
+// ======= Event Listeners and Initialization =======
 function initGame() {
-    // Obtenir les informations utilisateur depuis localStorage
     STATE.userId = localStorage.getItem('userId');
     STATE.username = localStorage.getItem('username');
 
-    // Définir le nom du joueur dans l'interface utilisateur
     const playerName = document.getElementById('player-name');
     if (playerName) {
         playerName.textContent = STATE.username;
     }
 
-    // Initialiser l'échiquier
     initBoard();
 
-    // Obtenir la couleur initiale de l'utilisateur depuis l'entrée cachée (si disponible)
     const userColorInput = document.getElementById('user-color');
     if (userColorInput && userColorInput.value) {
         STATE.userColor = userColorInput.value;
-        console.log("Couleur initiale de l'utilisateur depuis l'entrée:", STATE.userColor);
+        console.log("Initial user color from input:", STATE.userColor);
     }
 
-    // Initialiser la connexion Socket.IO
     initSocket();
 
-    // Ajouter les écouteurs d'événements
     addEventListeners();
 }
 
-// Ajouter les écouteurs d'événements
 function addEventListeners() {
-    // Bouton de retournement de l'échiquier
     const flipBoardBtn = document.getElementById('flip-board');
     if (flipBoardBtn) {
         flipBoardBtn.addEventListener('click', () => {
             STATE.flipped = !STATE.flipped;
-            STATE.manuallyFlipped = !STATE.manuallyFlipped; // Basculer l'état de retournement manuel
-            console.log(`Échiquier retourné manuellement. Retourné: ${STATE.flipped}, Manuel: ${STATE.manuallyFlipped}`);
+            STATE.manuallyFlipped = !STATE.manuallyFlipped;
+            console.log(`Board manually flipped. Flipped: ${STATE.flipped}, Manual: ${STATE.manuallyFlipped}`);
             updateBoard();
             updatePlayerBoxes();
         });
     }
 
-    // Bouton d'abandon
     const resignBtn = document.getElementById('resign-btn');
     if (resignBtn) {
         resignBtn.addEventListener('click', () => {
-            if (confirm('Êtes-vous sûr de vouloir abandonner ? Cette action ne peut pas être annulée.')) {
-                // Désactiver le bouton pour éviter les clics multiples
+            if (confirm('Are you sure you want to resign? This action cannot be undone.')) {
                 resignBtn.disabled = true;
-                resignBtn.textContent = 'Abandon en cours...';
+                resignBtn.textContent = 'Resigning...';
 
-                // Utiliser socket.io pour l'abandon (plus fiable que l'API REST pour l'état du jeu en temps réel)
                 if (STATE.socket) {
                     STATE.socket.emit('resign', {
                         game_id: STATE.gameId,
                         token: localStorage.getItem('token')
                     });
 
-                    // Montrer une notification que l'abandon a été envoyé
-                    showNotification('Abandon soumis', 'info');
+                    showNotification('Resignation submitted', 'info');
                 } else {
-                    // Socket non disponible
                     resignBtn.disabled = false;
-                    resignBtn.textContent = 'Abandonner';
-                    alert('Erreur de connexion. Veuillez réessayer.');
+                    resignBtn.textContent = 'Resign';
+                    alert('Connection error. Please try again.');
                 }
             }
         });
     }
 
-    // Bouton de nulle
     const drawBtn = document.getElementById('draw-btn');
     if (drawBtn) {
         drawBtn.addEventListener('click', () => {
@@ -3307,23 +2930,19 @@ function addEventListeners() {
                     token: localStorage.getItem('token')
                 });
 
-                // Désactiver temporairement le bouton pour éviter le spam
                 drawBtn.disabled = true;
-                drawBtn.textContent = 'Nulle offerte';
+                drawBtn.textContent = 'Draw offered';
 
-                // Montrer une notification à l'utilisateur
-                showNotification('Offre de nulle envoyée à votre adversaire', 'info');
+                showNotification('Draw offer sent to your opponent', 'info');
 
-                // Réinitialiser après 3 secondes
                 setTimeout(() => {
                     drawBtn.disabled = false;
-                    drawBtn.textContent = 'Offrir nulle';
+                    drawBtn.textContent = 'Offer draw';
                 }, 3000);
             }
         });
     }
 
-    // Bouton de revanche
     const rematchBtn = document.getElementById('rematch-btn');
     if (rematchBtn) {
         rematchBtn.addEventListener('click', () => {
@@ -3332,33 +2951,68 @@ function addEventListeners() {
                 token: localStorage.getItem('token')
             });
 
-            rematchBtn.textContent = 'Revanche demandée';
+            rematchBtn.textContent = 'Rematch requested';
             rematchBtn.disabled = true;
         });
     }
 
-    // Bouton de déconnexion
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // Effacer les tokens
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
             localStorage.removeItem('username');
 
-            // Rediriger vers la connexion
             window.location.href = '/login';
         });
     }
+
+    // NEW: Add keyboard navigation for moves
+    document.addEventListener('keydown', (e) => {
+        // Only allow navigation when not in an input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            navigateBackward();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            navigateForward();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            exitNavigation();
+        }
+    });
+
+    // NEW: Add close button to result panel
+    const gameResult = document.getElementById('game-result');
+    if (gameResult) {
+        // Add close button if it doesn't exist
+        let closeBtn = gameResult.querySelector('.close-result-btn');
+        if (!closeBtn) {
+            closeBtn = document.createElement('button');
+            closeBtn.className = 'close-result-btn btn-icon';
+            closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.top = '10px';
+            closeBtn.style.right = '10px';
+            
+            closeBtn.addEventListener('click', () => {
+                hideGameResult();
+            });
+            
+            gameResult.appendChild(closeBtn);
+        }
+    }
 }
 
-// Vérifier l'authentification de l'utilisateur
 function checkAuth() {
     const token = localStorage.getItem('token');
 
     if (!token) {
-        // Rediriger vers la connexion
         window.location.href = '/login';
         return false;
     }
@@ -3366,16 +3020,12 @@ function checkAuth() {
     return true;
 }
 
-// Initialiser quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', () => {
-    // Vérifier l'authentification
     if (!checkAuth()) return;
 
-    // Initialiser le jeu
     initGame();
 });
 
-// Mettre à jour l'affichage du contrôle du temps avec l'icône appropriée
 function updateTimeControlDisplay(timeControl) {
     const timeControlText = document.getElementById('time-control-text');
     const timeControlIcon = document.getElementById('time-control-icon');
@@ -3383,7 +3033,7 @@ function updateTimeControlDisplay(timeControl) {
     if (!timeControlText || !timeControlIcon) return;
 
     let icon = '<i class="fas fa-infinity"></i>';
-    let text = 'Illimité';
+    let text = 'Unlimited';
     
     if (timeControl) {
         if (typeof timeControl === 'string') {
@@ -3402,7 +3052,7 @@ function updateTimeControlDisplay(timeControl) {
                     break;
                 case 'unlimited':
                     icon = '<i class="fas fa-infinity"></i>';
-                    text = 'Illimité';
+                    text = 'Unlimited';
                     break;
                 default:
                     text = timeControl;
@@ -3416,7 +3066,7 @@ function updateTimeControlDisplay(timeControl) {
             const increment = timeControl.increment
                 ? Math.floor(timeControl.increment / 1000)
                 : 0;
-            console.log('Temps : ', initialMinutes,'+', increment);
+            console.log('Time:', initialMinutes, '+', increment);
             switch(type) {
                 case 'blitz':
                     icon = '<i class="fas fa-bolt"></i>';
