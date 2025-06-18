@@ -291,8 +291,7 @@ function createGameCard(game, isActive) {
     
     // Get appropriate time control icon
     const timeControlIcon = getTimeControlIcon(game.time_control);
-    
-    // Build card content with improved layout
+
     card.innerHTML = `
         <div class="game-card-header">
             <div class="opponent-info">
@@ -439,11 +438,10 @@ async function createGameFromButton(timeControlId) {
         
         const gameData = await response.json();
         
-        // Show the game code in a modal
-        showGameCodeModal(gameData.game_code, gameData.game_id);
         
-        // Reload active games
-        loadActiveGames();
+        window.location.href = '/game/' + gameData.game_id;
+        
+
         
     } catch (error) {
         console.error('Error creating game:', error);
@@ -514,11 +512,9 @@ async function createCustomGame() {
         // Close the modal
         document.getElementById('custom-game-modal').style.display = 'none';
         
-        // Show the game code in a modal
-        showGameCodeModal(gameData.game_code, gameData.game_id);
-        
-        // Reload active games
-        loadActiveGames();
+        window.location.href = '/game/' + gameData.game_id;
+
+    
         
     } catch (error) {
         console.error('Error creating game:', error);

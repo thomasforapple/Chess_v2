@@ -27,13 +27,8 @@
         <input type="hidden" id="game-id" value="{{ game_id }}">
         <input type="hidden" id="user-color" value="">
         
-        <!-- En-tête de jeu avec le statut -->
-        <div class="game-header">
-            <div class="game-status-container">
-                <div id="game-status" class="game-status">En attente du début de la partie</div>
-                <div id="check-indicator" class="check-indicator-text" style="display:none">ÉCHEC !</div>
-            </div>
-        </div>
+        <!-- En-tête de jeu avec le statut (supprimé car inutile) -->
+       
         
         <!-- Barre latérale gauche - Contrôles du jeu -->
         <div class="game-controls">
@@ -104,8 +99,8 @@
                     <!-- Will be filled by JavaScript -->
                 </div>
                 <div class="result-actions">
-                    <a href="/dashboard" class="btn btn-light">Retour au tableau de bord</a>
-                    <button id="rematch-btn" class="btn btn-primary">Demander une revanche</button>
+                    <a href="/dashboard" class="btn btn-light">Retour</a>
+                    <button id="rematch-btn" class="btn btn-primary">Revanche</button>
                 </div>
             </div>
 
@@ -120,20 +115,13 @@
         <!-- Barre latérale droite - Historique des coups -->
         <div class="game-history">
             <div class="move-history-container">
-                <h3>Historique des coups</h3>
+                <h3>Coups</h3>
                 <div id="moves-list" class="moves-list"></div>
             </div>
         </div>
         
-        <!-- Chat de la partie (en bas) -->
-        <div class="game-chat">
-            <h3>Chat de la partie</h3>
-            <div id="chat-messages" class="chat-messages"></div>
-            <div class="chat-input">
-                <input type="text" id="chat-message" placeholder="Écrire un message...">
-                <button id="send-message" class="btn btn-primary">Envoyer</button>
-            </div>
-        </div>
+    
+        
     </div>
 
     <!-- Modales -->
