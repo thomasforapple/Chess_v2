@@ -1162,14 +1162,31 @@ function updateBoard() {
 }
 
 // ======= Move Navigation Functions =======
+// ======= Fixed Move Navigation Functions =======
 function navigateToMove(moveIndex) {
     // If we're navigating to the current position, exit navigation mode
     if (moveIndex === -1 || moveIndex >= STATE.moveHistory.length) {
         STATE.navigation.isNavigating = false;
         STATE.navigation.currentMoveIndex = -1;
         
-        // Restore the current game position
-        loadFEN(ChessRules.generateFEN());
+        // Properly restore the current game position
+        if (STATE.moveHistory.length > 0) {
+            // Replay all moves to get to current position
+            setupStartingPosition();
+            for (const move of STATE.moveHistory) {
+                const moveObj = uciToMove(move.uci);
+                if (moveObj) {
+                    ChessRules.makeMove(moveObj);
+                }
+            }
+            STATE.currentPosition = ChessRules.gameState.position.slice();
+        } else {
+            // No moves played, just ensure we're at starting position
+            setupStartingPosition();
+        }
+        
+        // Update the board and UI
+        updateBoard();
         
         // Update move list highlighting
         updateMoveListHighlighting(-1);
@@ -1203,25 +1220,42 @@ function navigateToMove(moveIndex) {
 }
 
 function navigateForward() {
-    if (STATE.navigation.currentMoveIndex < STATE.moveHistory.length - 1) {
+    // Handle different navigation states
+    if (STATE.navigation.currentMoveIndex === -2) {
+        // We're at starting position, go to first move if it exists
+        if (STATE.moveHistory.length > 0) {
+            navigateToMove(0);
+        } else {
+            // No moves to go to, exit navigation
+            navigateToMove(-1);
+        }
+    } else if (STATE.navigation.currentMoveIndex >= 0 && STATE.navigation.currentMoveIndex < STATE.moveHistory.length - 1) {
+        // We're at a specific move, go to next move
         navigateToMove(STATE.navigation.currentMoveIndex + 1);
     } else {
-        // Go to current position
+        // We're at last move or current position, go to current position
         navigateToMove(-1);
     }
 }
 
 function navigateBackward() {
     if (STATE.navigation.currentMoveIndex > 0) {
+        // Go to previous move
         navigateToMove(STATE.navigation.currentMoveIndex - 1);
     } else if (STATE.navigation.currentMoveIndex === 0) {
-        // Go to starting position
+        // We're at first move, go to starting position
         navigateToStartingPosition();
-    } else {
-        // We're at current position, go to last move
+    } else if (STATE.navigation.currentMoveIndex === -1) {
+        // We're at current position, go to last move if it exists
         if (STATE.moveHistory.length > 0) {
             navigateToMove(STATE.moveHistory.length - 1);
+        } else {
+            // No moves to navigate to, go to starting position
+            navigateToStartingPosition();
         }
+    } else if (STATE.navigation.currentMoveIndex === -2) {
+        // Already at starting position, can't go further back
+        return;
     }
 }
 
@@ -1232,8 +1266,22 @@ function navigateToStartingPosition() {
     // Hide result panel
     document.getElementById('game-result').style.display = 'none';
     
-    // Load starting position
-    setupStartingPosition();
+    // Load starting position and update the chess rules state
+    const startingPosition = [
+        'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
+        'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p',
+        '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '',
+        '', '', '', '', '', '', '', '',
+        'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
+        'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'
+    ];
+    
+    STATE.currentPosition = [...startingPosition];
+    ChessRules.setupPosition(startingPosition);
+    
+    updateBoard();
     updateMoveListHighlighting(-2);
 }
 
@@ -1254,31 +1302,9 @@ function updateMoveListHighlighting(currentMoveIndex) {
 }
 
 function exitNavigation() {
-    STATE.navigation.isNavigating = false;
-    STATE.navigation.currentMoveIndex = -1;
-    
-    // Restore current game position
-    if (STATE.moveHistory.length > 0) {
-        // Replay all moves to get to current position
-        setupStartingPosition();
-        for (const move of STATE.moveHistory) {
-            const moveObj = uciToMove(move.uci);
-            if (moveObj) {
-                ChessRules.makeMove(moveObj);
-            }
-        }
-        STATE.currentPosition = ChessRules.gameState.position.slice();
-    }
-    
-    updateBoard();
-    updateMoveListHighlighting(-1);
-    
-    // Show result panel if game is completed
-    if (STATE.gameStatus === 'completed') {
-        document.getElementById('game-result').style.display = 'block';
-    }
+    // Properly exit navigation mode and restore current game state
+    navigateToMove(-1);
 }
-
 // ======= Drag and Drop Functions =======
 function handleDragStart(e) {
     if (STATE.gameStatus !== 'active' || !isPlayersTurn() || STATE.navigation.isNavigating) {
