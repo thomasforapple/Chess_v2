@@ -297,8 +297,8 @@ function createGameCard(game, isActive) {
     card.innerHTML = `
         <div class="game-card-header">
             <div class="opponent-info">
-                <span class="opponent-name">${opponent ? opponent.username : 'Waiting for opponent'} (${opponent.elo || '?'})</span>
-                
+                <span class="opponent-name">${opponent ? opponent.username : 'Waiting for opponent'}</span>
+                ${opponent ? `<span class="opponent-rating"> ${opponent.elo || '?'}</span>` : ''}
             </div>
             <span class="game-status-badge ${game.status}">${game.status}</span>
         </div>
@@ -313,7 +313,7 @@ function createGameCard(game, isActive) {
             ${isActive ? `<a href="/game/${game.game_id}" class="btn btn-primary">
                 ${game.status === 'waiting' ? "En attente de l'adversaire" : 'Continuer'}
             </a>` : 
-            `<a href="/game/${game.game_id}" class="btn btn-light">Voir</a>`}
+            `<a href="/game/${game.game_id}" class="btn btn-light"> Voir</a>`}
         </div>
     `;
     
