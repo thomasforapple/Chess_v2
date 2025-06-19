@@ -1161,8 +1161,6 @@ function updateBoard() {
     console.log('Board updated with position:', [...STATE.currentPosition]);
 }
 
-// ======= Move Navigation Functions =======
-// ======= Fixed Move Navigation Functions =======
 function navigateToMove(moveIndex) {
     // If we're navigating to the current position, exit navigation mode
     if (moveIndex === -1 || moveIndex >= STATE.moveHistory.length) {
@@ -1218,6 +1216,21 @@ function navigateToMove(moveIndex) {
         updateMoveListHighlighting(moveIndex);
     }
 }
+
+// NEW: Function to check if we can make moves (either not navigating, or navigating at current position)
+function canMakeMoves() {
+    return !STATE.navigation.isNavigating || STATE.navigation.currentMoveIndex === -1;
+}
+
+// NEW: Function to auto-exit navigation when making a move at current position
+function autoExitNavigationIfAtCurrent() {
+    if (STATE.navigation.isNavigating && STATE.navigation.currentMoveIndex === -1) {
+        STATE.navigation.isNavigating = false;
+        STATE.navigation.currentMoveIndex = -1;
+        updateMoveListHighlighting(-1);
+    }
+}
+
 
 function navigateForward() {
     // Handle different navigation states
@@ -1307,10 +1320,15 @@ function exitNavigation() {
 }
 // ======= Drag and Drop Functions =======
 function handleDragStart(e) {
-    if (STATE.gameStatus !== 'active' || !isPlayersTurn() || STATE.navigation.isNavigating) {
+    // Allow dragging if not navigating, OR if navigating but at current position
+    if (STATE.gameStatus !== 'active' || !isPlayersTurn() || 
+        (STATE.navigation.isNavigating && STATE.navigation.currentMoveIndex !== -1)) {
         e.preventDefault();
         return;
     }
+    
+    // Auto-exit navigation if we're at current position
+    autoExitNavigationIfAtCurrent();
     
     const img = e.target;
     const piece = img.dataset.piece;
@@ -1345,7 +1363,6 @@ function handleDragStart(e) {
     
     console.log('Started dragging piece:', piece, 'from index:', index);
 }
-
 function handleDragEnd(e) {
     const img = e.target;
     img.classList.remove('dragging');
@@ -1617,7 +1634,10 @@ function highlightKingInCheck(kingPos) {
 function precomputeLegalMoves() {
     STATE.legalMoves = {};
 
-    if (!isPlayersTurn() || STATE.navigation.isNavigating) return;
+    // Don't compute moves if not player's turn, OR if navigating (unless at current position)
+    if (!isPlayersTurn() || (STATE.navigation.isNavigating && STATE.navigation.currentMoveIndex !== -1)) {
+        return;
+    }
 
     const color = ChessRules.gameState.activeColor;
 
@@ -1901,14 +1921,17 @@ function handleSquareClick(position) {
         finishCurrentAnimation();
     }
 
-    // Don't allow moves during navigation
-    if (STATE.navigation.isNavigating) {
+    // Allow moves if not navigating, OR if navigating but at current position
+    if (STATE.navigation.isNavigating && STATE.navigation.currentMoveIndex !== -1) {
         return;
     }
 
     if (STATE.gameStatus !== 'active' || !isPlayersTurn()) {
         return;
     }
+
+    // Auto-exit navigation if we're at current position
+    autoExitNavigationIfAtCurrent();
 
     const { file, rank } = positionToFileRank(position);
     const index = STATE.flipped
@@ -1951,6 +1974,7 @@ function handleSquareClick(position) {
         }
     }
 }
+
 
 function makeMove(fromIndex, toIndex, moveObj) {
     const piece = STATE.currentPosition[fromIndex];
@@ -2575,10 +2599,9 @@ async function fetchGameData(gameId, token) {
         if (gameData.status === 'completed') {
             showGameResult(gameData.winner || 'draw');
         } else if (gameData.status === 'waiting') {
-            const whitePlayerId = gameData.white_player ? gameData.white_player.user_id : null;
-            if (whitePlayerId === localStorage.getItem('userId')) {
-                showGameInviteModal(gameData.game_code);
-            }
+                       
+            showGameInviteModal(gameData.game_code);
+            
         }
 
         console.log('Game loaded successfully. Current position:', [...STATE.currentPosition]);

@@ -98,36 +98,40 @@ function updateUserUI(userData) {
 }
 
 // Update the ratings UI
+// Update the ratings UI - FIXED VERSION
 function updateRatingsUI() {
     // Update Blitz rating
-    const blitzRatingElement = document.getElementById('blitz-rating');
-    const blitzGamesElement = document.getElementById('blitz-games');
+    const blitzRatingElement = document.getElementById('player-elo-blitz');
     if (blitzRatingElement) {
         blitzRatingElement.textContent = DASHBOARD_STATE.ratings.blitz.rating || 1200;
     }
-    if (blitzGamesElement) {
-        blitzGamesElement.textContent = DASHBOARD_STATE.ratings.blitz.games || 0;
-    }
     
     // Update Rapid rating
-    const rapidRatingElement = document.getElementById('rapid-rating');
-    const rapidGamesElement = document.getElementById('rapid-games');
+    const rapidRatingElement = document.getElementById('player-elo-rapid');
     if (rapidRatingElement) {
         rapidRatingElement.textContent = DASHBOARD_STATE.ratings.rapid.rating || 1200;
     }
-    if (rapidGamesElement) {
-        rapidGamesElement.textContent = DASHBOARD_STATE.ratings.rapid.games || 0;
-    }
     
     // Update Classical rating
-    const classicalRatingElement = document.getElementById('classical-rating');
-    const classicalGamesElement = document.getElementById('classical-games');
+    const classicalRatingElement = document.getElementById('player-elo-classical');
     if (classicalRatingElement) {
         classicalRatingElement.textContent = DASHBOARD_STATE.ratings.classical.rating || 1200;
     }
-    if (classicalGamesElement) {
-        classicalGamesElement.textContent = DASHBOARD_STATE.ratings.classical.games || 0;
-    }
+    
+    // Update games count by finding parent cards
+    const ratingCards = document.querySelectorAll('.rating-card');
+    ratingCards.forEach((card, index) => {
+        const gamesElement = card.querySelector('.games-played');
+        if (gamesElement) {
+            let gamesCount;
+            switch(index) {
+                case 0: gamesCount = DASHBOARD_STATE.ratings.blitz.games || 0; break;
+                case 1: gamesCount = DASHBOARD_STATE.ratings.rapid.games || 0; break;
+                case 2: gamesCount = DASHBOARD_STATE.ratings.classical.games || 0; break;
+            }
+            gamesElement.textContent = `Parties: ${gamesCount}`;
+        }
+    });
 }
 
 // Load active games
