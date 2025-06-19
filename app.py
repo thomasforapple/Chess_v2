@@ -52,6 +52,8 @@ def decode_token(token):
         return None
 
 # Models
+# Replace the entire User class section in app.py with this:
+
 class User:
     @staticmethod
     def create(username, email, password):
@@ -67,60 +69,6 @@ class User:
                 'rapid': {'rating': 1200, 'games': 0},
                 'classical': {'rating': 1200, 'games': 0}
             },
-            'games_played': 0,
-            'games_won': 0,
-            'games_lost': 0,
-            'games_drawn': 0,
-            'created_at': datetime.utcnow()
-        }
-        
-        result = db.users.insert_one(user)
-        return str(result.inserted_id)
-    
-    @staticmethod
-    def update_rating(user_id, time_control, result):
-        """Update user rating based on game result and time control"""
-        user = User.get_by_id(user_id)
-        if not user:
-            return
-            
-        # Default K-factor for rating changes
-        k_factor = 32
-        
-        # Get current rating
-        current_rating = user.get('ratings', {}).get(time_control, {}).get('rating', 1200)
-        games_count = user.get('ratings', {}).get(time_control, {}).get('games', 0) + 1
-        
-        # Simple rating adjustment based on result
-        # In a real ELO system, this would be based on opponent rating too
-        if result == 'win':
-            new_rating = current_rating + k_factor
-        elif result == 'loss':
-            new_rating = current_rating - k_factor
-        else:  # draw
-            new_rating = current_rating
-            
-        # Update the rating in the database
-        update_field = f'ratings.{time_control}'
-        db.users.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': {
-                f'{update_field}.rating': new_rating,
-                f'{update_field}.games': games_count
-            }}
-        )
-        
-        return new_rating
-    @staticmethod
-    def create(username, email, password):
-        """Create a new user"""
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        
-        user = {
-            'username': username,
-            'email': email,
-            'password': hashed_password,
-            'elo': 1200,
             'games_played': 0,
             'games_won': 0,
             'games_lost': 0,
@@ -165,7 +113,89 @@ class User:
             update['$inc']['games_drawn'] = 1
             
         db.users.update_one({'_id': ObjectId(user_id)}, update)
-
+    
+    @staticmethod
+    def calculate_elo_change(player_elo, opponent_elo, result):
+        """Calculate new ELO using standard ELO formula"""
+        k_factor = 32
+        expected_score = 1 / (1 + 10 ** ((opponent_elo - player_elo) / 400))
+        
+        if result == 'win':
+            actual_score = 1
+        elif result == 'loss':
+            actual_score = 0
+        else:  # draw
+            actual_score = 0.5
+            
+        return round(player_elo + k_factor * (actual_score - expected_score))
+    
+    @staticmethod
+    def update_both_players_ratings(white_player_id, black_player_id, result, time_control):
+        """Update ratings for both players after a game"""
+        white_player = User.get_by_id(white_player_id)
+        black_player = User.get_by_id(black_player_id)
+        
+        if not white_player or not black_player:
+            return None, None
+            
+        # Normalize time control
+        if isinstance(time_control, dict):
+            time_control_type = time_control.get('type', 'classical')
+        elif isinstance(time_control, str):
+            time_control_type = time_control
+        else:
+            time_control_type = 'classical'
+            
+        if time_control_type not in ['blitz', 'rapid', 'classical']:
+            time_control_type = 'classical'
+        
+        # Get current ratings, ensuring structure exists
+        white_ratings = white_player.get('ratings', {})
+        black_ratings = black_player.get('ratings', {})
+        
+        if time_control_type not in white_ratings:
+            white_ratings[time_control_type] = {'rating': white_player.get('elo', 1200), 'games': 0}
+        if time_control_type not in black_ratings:
+            black_ratings[time_control_type] = {'rating': black_player.get('elo', 1200), 'games': 0}
+            
+        white_rating = white_ratings[time_control_type].get('rating', 1200)
+        black_rating = black_ratings[time_control_type].get('rating', 1200)
+        
+        white_games = white_ratings[time_control_type].get('games', 0)
+        black_games = black_ratings[time_control_type].get('games', 0)
+        
+        # Calculate new ratings based on game result
+        if result == 'white':
+            new_white_rating = User.calculate_elo_change(white_rating, black_rating, 'win')
+            new_black_rating = User.calculate_elo_change(black_rating, white_rating, 'loss')
+        elif result == 'black':
+            new_white_rating = User.calculate_elo_change(white_rating, black_rating, 'loss')
+            new_black_rating = User.calculate_elo_change(black_rating, white_rating, 'win')
+        else:  # draw
+            new_white_rating = User.calculate_elo_change(white_rating, black_rating, 'draw')
+            new_black_rating = User.calculate_elo_change(black_rating, white_rating, 'draw')
+        
+        # Update white player
+        db.users.update_one(
+            {'_id': ObjectId(white_player_id)},
+            {'$set': {
+                f'ratings.{time_control_type}.rating': new_white_rating,
+                f'ratings.{time_control_type}.games': white_games + 1,
+                'elo': new_white_rating  # Update legacy field
+            }}
+        )
+        
+        # Update black player
+        db.users.update_one(
+            {'_id': ObjectId(black_player_id)},
+            {'$set': {
+                f'ratings.{time_control_type}.rating': new_black_rating,
+                f'ratings.{time_control_type}.games': black_games + 1,
+                'elo': new_black_rating  # Update legacy field
+            }}
+        )
+        
+        return new_white_rating, new_black_rating
 class Game:
     @staticmethod
     def create(white_player_id, color_preference="white", time_control=None):
