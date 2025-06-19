@@ -1589,14 +1589,212 @@ function hideGameResult() {
     }, 300);
 }
 
+function showGameResult(result) {
+    const gameResult = document.getElementById('game-result');
+    const resultMessage = document.getElementById('result-message');
+
+    if (!gameResult || !resultMessage) {
+        console.error('Game result elements not found');
+        return;
+    }
+
+    console.log('Showing game result:', result);
+
+    let message = '';
+    let cause = '';
+    let resultClass = '';
+
+    // Normalize the result object to handle different formats
+    let normalizedResult = {...result};
+    
+    // Handle cases where result.result might be "draw_agreement", "win_checkmate", etc.
+    if (typeof normalizedResult.result === 'string') {
+        if (normalizedResult.result.startsWith('draw')) {
+            normalizedResult.result = 'draw';
+            if (!normalizedResult.result_type && normalizedResult.result.includes('_')) {
+                normalizedResult.result_type = normalizedResult.result.split('_')[1];
+            }
+        } else if (normalizedResult.result.includes('_')) {
+            const parts = normalizedResult.result.split('_');
+            normalizedResult.result = parts[0];
+            if (!normalizedResult.result_type) {
+                normalizedResult.result_type = parts[1];
+            }
+        }
+    }
+
+    // Determine if it's a draw first (most reliable check)
+    const isDraw = normalizedResult.result === 'draw' || 
+                   normalizedResult.winner === 'draw' ||
+                   (typeof result.result === 'string' && result.result.startsWith('draw'));
+
+    // Determine winner/loser status
+    const isWinner = normalizedResult.winner === STATE.userId;
+    const isLoser = normalizedResult.loser === STATE.userId || 
+                   (normalizedResult.winner && normalizedResult.winner !== STATE.userId && normalizedResult.winner !== 'draw');
+
+    if (isDraw) {
+        message = 'Partie nulle';
+        resultClass = 'draw';
+        
+        // Determine the cause of the draw
+        const resultType = normalizedResult.result_type || result.result_type;
+        switch(resultType) {
+            case 'agreement':
+                cause = 'Par accord mutuel';
+                break;
+            case 'stalemate':
+                cause = 'Par pat';
+                break;
+            case 'fifty_move':
+                cause = 'Règle des 50 coups';
+                break;
+            case 'insufficient':
+                cause = 'Matériel insuffisant';
+                break;
+            case 'repetition':
+                cause = 'Triple répétition';
+                break;
+            default:
+                cause = 'Par accord mutuel';
+        }
+    } 
+    else if (normalizedResult.result === 'timeout' || normalizedResult.result_type === 'timeout') {
+        if (isLoser) {
+            message = 'Vous avez perdu';
+            resultClass = 'loss';
+            cause = 'Au temps';
+        } else if (isWinner) {
+            message = 'Vous avez gagné';
+            resultClass = 'win';
+            cause = 'L\'adversaire a dépassé le temps';
+        } else {
+            // Fallback: determine by timeout info
+            message = 'Partie terminée';
+            resultClass = 'draw';
+            cause = 'Temps dépassé';
+        }
+    }
+    else if (normalizedResult.result === 'resigned' || normalizedResult.result_type === 'resignation') {
+        if (isLoser) {
+            message = 'Vous avez perdu';
+            resultClass = 'loss';
+            cause = 'Par abandon';
+        } else if (isWinner) {
+            message = 'Vous avez gagné';
+            resultClass = 'win';
+            cause = 'L\'adversaire a abandonné';
+        } else {
+            // Fallback
+            message = 'Partie terminée';
+            resultClass = 'draw';
+            cause = 'Par abandon';
+        }
+    }
+    else if (isWinner) {
+        message = 'Vous avez gagné';
+        resultClass = 'win';
+        
+        const resultType = normalizedResult.result_type || result.result_type;
+        switch(resultType) {
+            case 'checkmate':
+                cause = 'Par échec et mat';
+                break;
+            case 'timeout':
+                cause = 'L\'adversaire a dépassé le temps';
+                break;
+            case 'resignation':
+                cause = 'L\'adversaire a abandonné';
+                break;
+            default:
+                cause = 'Par échec et mat';
+        }
+    } 
+    else if (isLoser) {
+        message = 'Vous avez perdu';
+        resultClass = 'loss';
+        
+        const resultType = normalizedResult.result_type || result.result_type;
+        switch(resultType) {
+            case 'checkmate':
+                cause = 'Par échec et mat';
+                break;
+            case 'timeout':
+                cause = 'Au temps';
+                break;
+            case 'resignation':
+                cause = 'Par abandon';
+                break;
+            default:
+                cause = 'Par échec et mat';
+        }
+    }
+    else {
+        // Fallback case
+        message = 'Partie terminée';
+        resultClass = 'draw';
+        cause = 'Résultat inconnu';
+    }
+
+    // Update the result message
+    resultMessage.innerHTML = `
+        <div class="result-header">${message}</div>
+        <div class="result-cause">${cause}</div>
+    `;
+    
+    // Apply the appropriate CSS classes
+    gameResult.className = 'game-result-panel';
+    gameResult.style.display = 'block';
+    
+    // Force a reflow
+    gameResult.offsetHeight;
+    
+    gameResult.classList.add('show', resultClass);
+
+    // Disable game interaction
+    disableGameInteraction();
+
+    // Show notification
+    const notificationType = resultClass === 'win' ? 'success' : (resultClass === 'loss' ? 'error' : 'info');
+    showNotification(`${message} - ${cause}`, notificationType);
+
+    // Scroll to result after a brief delay
+    setTimeout(() => {
+        gameResult.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center'
+        });
+    }, 100);
+}
 function showGameResultForExistingGame(gameData) {
     if (gameData.status !== 'completed') return;
     
-    const result = {
+    // Make sure we have the user ID
+    if (!STATE.userId) {
+        STATE.userId = localStorage.getItem('userId');
+    }
+    
+    // Determine the result based on winner
+    let result = {
         game_id: gameData.game_id,
         winner: gameData.winner,
         result_type: gameData.result_type || 'checkmate'
     };
+    
+    // Add the 'result' property that showGameResult expects
+    if (gameData.winner === 'draw') {
+        result.result = 'draw';
+    } else if (gameData.winner === STATE.userId) {
+        result.result = 'win';
+    } else {
+        result.result = 'loss';
+        result.loser = STATE.userId;
+    }
+    
+    // For resignation, add the result type to the result string
+    if (gameData.result_type === 'resignation') {
+        result.result = result.result === 'win' ? 'win' : 'resigned';
+    }
     
     setTimeout(() => {
         showGameResult(result);
@@ -2499,34 +2697,56 @@ function initSocket() {
         }
     });
     
-    STATE.socket.on('game_result', (result) => {
-        console.log('Game result received:', result);
+    // Replace the existing socket handler for 'game_result' in script.js
+STATE.socket.on('game_result', (result) => {
+    console.log('Game result received:', result);
 
-        stopClockInterval();
-        STATE.clock.started = false;
+    // Stop clock
+    stopClockInterval();
+    STATE.clock.started = false;
 
-        STATE.gameStatus = 'completed';
+    // Update game status
+    STATE.gameStatus = 'completed';
 
-        if (result.result_type) {
-            if (!result.result) {
-                if (result.winner === 'draw') {
-                    result.result = 'draw';
-                } else if (result.winner === STATE.userId) {
-                    result.result = 'win';
-                } else {
-                    result.result = 'loss';
+    // Normalize the result object to ensure consistency
+    let normalizedResult = {...result};
+    
+    // Ensure we have the correct structure
+    if (!normalizedResult.game_id) {
+        normalizedResult.game_id = STATE.gameId;
+    }
+
+    // Handle different result formats from server
+    if (result.result === 'resigned' && result.winner && result.loser) {
+        normalizedResult.result = 'resigned';
+        normalizedResult.result_type = 'resignation';
+    } else if (result.result === 'timeout' && result.winner && result.loser) {
+        normalizedResult.result = 'timeout';
+        normalizedResult.result_type = 'timeout';
+    } else if (result.result === 'draw' || result.winner === 'draw') {
+        normalizedResult.result = 'draw';
+        if (!normalizedResult.result_type) {
+            normalizedResult.result_type = result.result_type || 'agreement';
+        }
+    }
+
+    // Ensure winner/loser are properly set for non-draw results
+    if (normalizedResult.result !== 'draw' && normalizedResult.winner !== 'draw') {
+        if (!normalizedResult.winner && !normalizedResult.loser) {
+            // Try to determine from the result object
+            if (result.player_id) {
+                // If there's a player_id, they might be the loser (in case of resignation)
+                if (normalizedResult.result === 'resigned') {
+                    normalizedResult.loser = result.player_id;
+                    normalizedResult.winner = result.player_id === STATE.userId ? STATE.opponentId : STATE.userId;
                 }
             }
-
-            if (result.result === 'draw') {
-                result.result = `draw_${result.result_type}`;
-            } else {
-                result.result = `${result.result}_${result.result_type}`;
-            }
         }
+    }
 
-        showGameResult(result);
-    });
+    // Show the result
+    showGameResult(normalizedResult);
+});
 
     STATE.socket.on('error', (error) => {
         console.error('Socket error:', error);
@@ -2597,7 +2817,7 @@ async function fetchGameData(gameId, token) {
         updatePlayerBoxes();
 
         if (gameData.status === 'completed') {
-            showGameResult(gameData.winner || 'draw');
+            showGameResultForExistingGame(gameData);
         } else if (gameData.status === 'waiting') {
                        
             showGameInviteModal(gameData.game_code);

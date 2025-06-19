@@ -354,14 +354,15 @@ class Game:
 
         # Format response
         formatted_game = {
-            'game_id': str(game['_id']),
-            'status': game['status'],
-            'created_at': game['created_at'].isoformat(),
-            'updated_at': game['updated_at'].isoformat(),
-            'game_code': game['game_code'],
-            'winner': game['winner'],
-            'time_control': game['time_control']
-        }
+    'game_id': str(game['_id']),
+    'status': game['status'],
+    'created_at': game['created_at'].isoformat(),
+    'updated_at': game['updated_at'].isoformat(),
+    'game_code': game['game_code'],
+    'winner': game.get('winner'),
+    'result_type': game.get('result_type'),  # ADD THIS LINE
+    'time_control': game['time_control']
+}
         
         # Add player info
         if white_player:
@@ -511,31 +512,51 @@ class Game:
             )
 
             # Update user stats if game completed
+            # Replace the ELO update logic in Game.make_move method in app.py
+
+# Update user stats if game completed
             if status == 'completed':
                 # Get the time control type
-                time_control_type = 'unlimited'
+                time_control_type = 'classical'  # Default
                 if isinstance(game['time_control'], str):
                     time_control_type = game['time_control']
                 elif isinstance(game['time_control'], dict) and 'type' in game['time_control']:
                     time_control_type = game['time_control']['type']
                 
+                # Ensure valid time control type
+                if time_control_type not in ['blitz', 'rapid', 'classical']:
+                    time_control_type = 'classical'
+                
                 # Determine the winner and update stats/ratings
+                white_player_id = str(game['white_player_id'])
+                black_player_id = str(game['black_player_id'])
+                
                 if winner == 'draw':
-                    User.update_stats(str(game['white_player_id']), 'draw')
-                    User.update_stats(str(game['black_player_id']), 'draw')
+                    User.update_stats(white_player_id, 'draw')
+                    User.update_stats(black_player_id, 'draw')
                     # Update ELO for a draw
-                    Game.update_elo(db, game, 'draw', time_control_type)
-                elif winner == str(game['white_player_id']):
-                    User.update_stats(str(game['white_player_id']), 'win')
-                    User.update_stats(str(game['black_player_id']), 'loss')
+                    User.update_both_players_ratings(white_player_id, black_player_id, 'draw', time_control_type)
+                elif winner == white_player_id:
+                    User.update_stats(white_player_id, 'win')
+                    User.update_stats(black_player_id, 'loss')
                     # Update ELO for white win
-                    Game.update_elo(db, game, 'white', time_control_type)
-                else:
-                    User.update_stats(str(game['black_player_id']), 'win')
-                    User.update_stats(str(game['white_player_id']), 'loss')
+                    User.update_both_players_ratings(white_player_id, black_player_id, 'white', time_control_type)
+                elif winner == black_player_id:
+                    User.update_stats(black_player_id, 'win')
+                    User.update_stats(white_player_id, 'loss')
                     # Update ELO for black win
-                    Game.update_elo(db, game, 'black', time_control_type)
-
+                    User.update_both_players_ratings(white_player_id, black_player_id, 'black', time_control_type)
+                else:
+                    # Handle other cases (timeout, resignation, etc.)
+                    if winner and winner != 'draw':
+                        if winner == white_player_id:
+                            User.update_stats(white_player_id, 'win')
+                            User.update_stats(black_player_id, 'loss')
+                            User.update_both_players_ratings(white_player_id, black_player_id, 'white', time_control_type)
+                        elif winner == black_player_id:
+                            User.update_stats(black_player_id, 'win')
+                            User.update_stats(white_player_id, 'loss')
+                            User.update_both_players_ratings(white_player_id, black_player_id, 'black', time_control_type)        
             updated_game = Game.get_by_id(game_id)
             return Game.format_game_data(updated_game, player_id), None
 
@@ -990,7 +1011,7 @@ def handle_accept_draw(data):
             '$set': {
                 'status': 'completed',
                 'winner': 'draw',
-                'result_type': 'agreement',  # Add specific result type
+                'result_type': 'agreement',
                 'updated_at': datetime.utcnow()
             }
         }
@@ -1005,8 +1026,10 @@ def handle_accept_draw(data):
     emit('game_result', {
         'game_id': game_id,
         'result': 'draw',
-        'result_type': 'agreement'  # Specify draw by agreement
+        'winner': 'draw',
+        'result_type': 'agreement'
     }, room=game_id)
+
 
 
 @socketio.on('decline_draw')
@@ -1052,7 +1075,7 @@ def handle_resign(data):
                 '$set': {
                     'status': 'completed',
                     'winner': winner,
-                    'result_type': 'resignation',  # Add specific result type
+                    'result_type': 'resignation',
                     'updated_at': datetime.utcnow()
                 }
             }
@@ -1068,7 +1091,7 @@ def handle_resign(data):
             'result': 'resigned',
             'winner': winner,
             'loser': user_id,
-            'result_type': 'resignation'  # Specify resignation
+            'result_type': 'resignation'
         }, room=game_id)
     else:
         emit('error', {'message': 'Game not found or not active'})
@@ -1106,8 +1129,7 @@ def handle_time_out(data):
         loser_id = user_id
         winner_id = str(game['black_player_id'] if is_white else game['white_player_id'])
     else:
-        # Player is reporting opponent's timeout (suspicious, but we'll handle it)
-        # In real production we would verify server-side instead
+        # Player is reporting opponent's timeout
         loser_id = str(game['white_player_id'] if color == 'white' else game['black_player_id'])
         winner_id = user_id
 
@@ -1118,7 +1140,7 @@ def handle_time_out(data):
             '$set': {
                 'status': 'completed',
                 'winner': winner_id,
-                'result_type': 'timeout',  # Add specific result type
+                'result_type': 'timeout',
                 'updated_at': datetime.utcnow()
             }
         }
@@ -1133,7 +1155,8 @@ def handle_time_out(data):
         'game_id': game_id,
         'result': 'timeout',
         'winner': winner_id,
-        'loser': loser_id
+        'loser': loser_id,
+        'result_type': 'timeout'
     }, room=game_id)
 
 
