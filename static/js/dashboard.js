@@ -282,41 +282,38 @@ function createGameCard(game, isActive) {
     // Determine result text
     if (game.status === 'completed') {
         if (game.winner === 'draw') {
-            resultText = 'Draw';
+            resultText = 'Nulle';
         } else if (game.winner === userId) {
-            resultText = 'Won';
+            resultText = 'Victoire';
         } else {
-            resultText = 'Lost';
+            resultText = 'Défaite';
         }
     }
     
-    // Add the appropriate class for styling
     card.className = `game-card ${resultText}`;
     
-    // Get appropriate time control icon
     const timeControlIcon = getTimeControlIcon(game.time_control);
 
     card.innerHTML = `
         <div class="game-card-header">
             <div class="opponent-info">
-                <span class="opponent-name">${opponent ? opponent.username : 'Waiting for opponent'}</span>
-                ${opponent ? `<span class="opponent-rating">ELO: ${opponent.elo || '?'}</span>` : ''}
+                <span class="opponent-name">${opponent ? opponent.username : 'Waiting for opponent'} (${opponent.elo || '?'})</span>
+                
             </div>
             <span class="game-status-badge ${game.status}">${game.status}</span>
         </div>
         <div class="game-card-content">
             <div class="game-info">
-                <span class="game-date">${dateString}</span>
-                <span class="player-color">You: ${isWhite ? 'White ♔' : 'Black ♚'}</span>
+                <span class="game-date">${dateString}</span>               
                 <span class="time-control">${timeControlIcon} ${formatTimeControl(game.time_control)}</span>
                 ${game.status === 'completed' ? `<span class="game-result ${resultText}">${resultText}</span>` : ''}
             </div>
         </div>
         <div class="game-card-actions">
             ${isActive ? `<a href="/game/${game.game_id}" class="btn btn-primary">
-                ${game.status === 'waiting' ? 'Waiting for Opponent' : 'Continue Game'}
+                ${game.status === 'waiting' ? "En attente de l'adversaire" : 'Continuer'}
             </a>` : 
-            `<a href="/game/${game.game_id}" class="btn btn-light">View Game</a>`}
+            `<a href="/game/${game.game_id}" class="btn btn-light">Voir</a>`}
         </div>
     `;
     
